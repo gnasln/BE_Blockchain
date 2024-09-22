@@ -1,0 +1,75 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\EZTEK\\Base_BE\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{44D8DB64-4A0F-4550-9DB5-2D12156C2499}|Base_BE\\Base_BE.csproj|d:\\eztek\\base_be\\base_be\\base_be.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{44D8DB64-4A0F-4550-9DB5-2D12156C2499}|Base_BE\\Base_BE.csproj|solutionrelative:base_be\\base_be.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1FCDDB05-DAF5-4546-BC6E-3DF0AED3ABE6}|Base_BE.Infrastructure\\Base_BE.Infrastructure.csproj|d:\\eztek\\base_be\\base_be.infrastructure\\base_be.infrastructure.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{1FCDDB05-DAF5-4546-BC6E-3DF0AED3ABE6}|Base_BE.Infrastructure\\Base_BE.Infrastructure.csproj|solutionrelative:base_be.infrastructure\\base_be.infrastructure.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B06ADB5-F890-4577-976F-12B9158F4407}|Base_BE.Application\\Base_BE.Application.csproj|d:\\eztek\\base_be\\base_be.application\\base_be.application.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{4B06ADB5-F890-4577-976F-12B9158F4407}|Base_BE.Application\\Base_BE.Application.csproj|solutionrelative:base_be.application\\base_be.application.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Base_BE",
+              "DocumentMoniker": "D:\\EZTEK\\Base_BE\\Base_BE\\Base_BE.csproj",
+              "RelativeDocumentMoniker": "Base_BE\\Base_BE.csproj",
+              "ToolTip": "D:\\EZTEK\\Base_BE\\Base_BE\\Base_BE.csproj",
+              "RelativeToolTip": "Base_BE\\Base_BE.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-09-22T03:16:32.338Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Base_BE.Infrastructure",
+              "DocumentMoniker": "D:\\EZTEK\\Base_BE\\Base_BE.Infrastructure\\Base_BE.Infrastructure.csproj",
+              "RelativeDocumentMoniker": "Base_BE.Infrastructure\\Base_BE.Infrastructure.csproj",
+              "ToolTip": "D:\\EZTEK\\Base_BE\\Base_BE.Infrastructure\\Base_BE.Infrastructure.csproj",
+              "RelativeToolTip": "Base_BE.Infrastructure\\Base_BE.Infrastructure.csproj",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-09-22T03:16:12.289Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Base_BE.Application",
+              "DocumentMoniker": "D:\\EZTEK\\Base_BE\\Base_BE.Application\\Base_BE.Application.csproj",
+              "RelativeDocumentMoniker": "Base_BE.Application\\Base_BE.Application.csproj",
+              "ToolTip": "D:\\EZTEK\\Base_BE\\Base_BE.Application\\Base_BE.Application.csproj",
+              "RelativeToolTip": "Base_BE.Application\\Base_BE.Application.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-09-22T03:15:52.576Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
