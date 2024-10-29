@@ -38,7 +38,6 @@ public static class DependencyInjection
                 policy.RequireRole("Administrator");
             });
 
-
         return services;
     }
 }

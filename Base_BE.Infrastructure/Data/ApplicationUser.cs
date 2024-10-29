@@ -4,16 +4,26 @@ namespace Base_BE.Infrastructure.Data
 {
     public class ApplicationUser : IdentityUser
     {
-        
-        public string? FullName { get; set; }
-        public string? DisplayName { get; set; }
-        public string? Address { set; get; }
-        public string? Status { get; set; } = "0";
-        public string? OTP { set; get; }
-        public DateTime? ActivationDate { get; set; } = DateTime.MinValue;
+		public string? FullName { get; set; }
+        public bool? Gender { get; set; }
+		public string? Address { set; get; }
         public DateTime? Birthday { set; get; } = DateTime.MinValue;
-        public DateTime? Expires_at { get; set; }
-        public DateTime? Updated_at { get; set; }
+        public new string? Email { get; set; }
+		public string? CellPhone { get; set; }
+        public string? Status { get; set; }
+        public bool? ChangePasswordFirstTime { get; set; } = false;
+		public DateTime? CreateDate { get; set; } = DateTime.Now;
+        public DateTime? UpdateDate {  get; set; }
+        public string? ImageUrl { get; set; }
+        public string? TwoFaKey { get; set; }
+        public bool? TwoFaEnable { get; set; }
+        public string? EmailVerifyKey { get; set; }
+        public string? NewEmail { get; set; }
+		public string? IdentityCardImage { get; set; }
+		public string? IdentityCardNumber { get; set; }
+		public DateTime? IdentityCardDate { get; set; }
+		public string? IdentityCardPlace { get; set; }
 
-    }
+
+	}
 }

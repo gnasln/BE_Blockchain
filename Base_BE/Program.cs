@@ -95,9 +95,8 @@ app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(
 app.UseAuthentication();
 app.UseAuthorization();
 
-
-
+app.UseStaticFiles();
 app.MapControllers();
 app.MapEndpoints();
 
-app.Run();
+await app.RunAsync();

@@ -1,0 +1,6 @@
+﻿services:
+  base_be:
+    image: base_be
+    build:
+      context: .
+      dockerfile: Base_BE/Dockerfile

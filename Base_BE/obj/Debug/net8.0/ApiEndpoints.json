@@ -1,0 +1,156 @@
+[
+  {
+    "ContainingType": "Base_BE.Endpoints.ImagesController",
+    "Method": "UploadImage",
+    "RelativePath": "api/Images/upload",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.User",
+    "Method": "RegisterUser",
+    "RelativePath": "api/user/register",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "newUser",
+        "Type": "Base_BE.Identity.RegisterForm",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ],
+    "Tags": [
+      "user"
+    ],
+    "EndpointName": "RegisterUser"
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.AuthorizationController",
+    "Method": "Authorize",
+    "RelativePath": "connect/authorize",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.AuthorizationController",
+    "Method": "Authorize",
+    "RelativePath": "connect/authorize",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.AuthorizationController",
+    "Method": "Accept",
+    "RelativePath": "connect/authorize",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.AuthorizationController",
+    "Method": "Deny",
+    "RelativePath": "connect/authorize",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.AuthorizationController",
+    "Method": "Logout",
+    "RelativePath": "connect/logout",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.AuthorizationController",
+    "Method": "LogoutPost",
+    "RelativePath": "connect/logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.AuthorizationController",
+    "Method": "Exchange",
+    "RelativePath": "connect/token",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Bff.Endpoints.UserinfoController",
+    "Method": "Userinfo",
+    "RelativePath": "connect/userinfo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Bff.Endpoints.UserinfoController",
+    "Method": "Userinfo",
+    "RelativePath": "connect/userinfo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Base_BE.Endpoints.HealthCheck\u002B\u003C\u003Ec",
+    "Method": "\u003CMap\u003Eb__0_0",
+    "RelativePath": "HealthCheck/ping",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Int32",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      }
+    ],
+    "Tags": [
+      "Ping"
+    ],
+    "EndpointName": "Ping"
+  }
+]
