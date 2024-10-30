@@ -5,12 +5,12 @@ namespace Base_BE.Infrastructure.Data
     public class ApplicationUser : IdentityUser
     {
 		public string? FullName { get; set; }
-        public bool? Gender { get; set; }
+		public bool? Gender { get; set; } = true;
 		public string? Address { set; get; }
         public DateTime? Birthday { set; get; } = DateTime.MinValue;
         public new string? Email { get; set; }
 		public string? CellPhone { get; set; }
-        public string? Status { get; set; }
+        public string? Status { get; set; } = "Active";
         public bool? ChangePasswordFirstTime { get; set; } = false;
 		public DateTime? CreateDate { get; set; } = DateTime.Now;
         public DateTime? UpdateDate {  get; set; }
@@ -23,7 +23,8 @@ namespace Base_BE.Infrastructure.Data
 		public string? IdentityCardNumber { get; set; }
 		public DateTime? IdentityCardDate { get; set; }
 		public string? IdentityCardPlace { get; set; }
+        public string? PublicKey { get; set; }
 
 
-	}
+    }
 }

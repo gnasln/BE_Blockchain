@@ -103,6 +103,9 @@ namespace Base_BE.Infrastructure.Data.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("PublicKey")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("longtext");
 
