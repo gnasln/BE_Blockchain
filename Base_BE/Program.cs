@@ -1,6 +1,7 @@
 using System.Configuration;
 using Base_BE.Infrastructure.Data;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Formatting.Json;

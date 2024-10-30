@@ -9,6 +9,8 @@ using System.Text;
 using Base_BE.Application.Common.Interfaces;
 using Base_BE.Domain.Constants;
 using Base_BE.Dtos;
+using Base_BE.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace Base_BE.Endpoints
 {
@@ -18,36 +20,45 @@ namespace Base_BE.Endpoints
         {
             app.MapGroup(this)
                 .MapPost(RegisterUser, "/register");
-            
-            
+
+
             app.MapGroup(this)
                 .RequireAuthorization()
                 .MapPut(ChangePassword, "/change-password")
-                .MapPatch(UpdateUser, "/update-user");
+                .MapPatch(UpdateUser, "/update-user")
+                .MapPost(SendOTP, "/send-otp")
+                .MapPost(VerifyOTP, "/verify-otp")
+                .MapPut(ChangeEmail, "/change-email");
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
-            UserManager<ApplicationUser> _userManager)
+            UserManager<ApplicationUser> _userManager, [FromServices] EmailSender _emailSender)
         {
+            // Kiểm tra Username
             if (string.IsNullOrEmpty(newUser.UserName))
             {
                 return Results.BadRequest("400|Username is required");
             }
 
-            // Kiểm tra username chỉ chứa chữ cái và chữ số
+            // Kiểm tra Username chỉ chứa chữ cái và chữ số
             if (!newUser.UserName.All(char.IsLetterOrDigit))
             {
                 return Results.BadRequest("400|Username can only contain letters or digits.");
             }
 
+            // Kiểm tra xem User đã tồn tại chưa
             var user = await _userManager.FindByNameAsync(newUser.UserName);
             if (user != null)
             {
-                return Results.BadRequest("501|User existed");
+                return Results.BadRequest("501|User already exists");
             }
 
+            // Tạo cặp khóa RSA
+            using var rsa = new RSACryptoServiceProvider(512);
+            var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
+            var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
 
-            // Tạo mới đối tượng ApplicationUser
+            // Tạo đối tượng ApplicationUser
             var newUserEntity = new ApplicationUser
             {
                 UserName = newUser.UserName,
@@ -61,40 +72,39 @@ namespace Base_BE.Endpoints
                 IdentityCardDate = newUser.IdentityCardDate,
                 IdentityCardPlace = newUser.IdentityCardPlace,
                 ImageUrl = newUser.ImageUrl,
-                IdentityCardImage = newUser.UrlIdentityCardImage
+                IdentityCardImage = newUser.UrlIdentityCardImage,
+                PublicKey = publicKey
             };
 
-            // Tạo tài khoản người dùng mới
+            // Tạo mật khẩu mặc định dựa trên ngày sinh hoặc giá trị mặc định nếu không có ngày sinh
             var passwordSeed = "Abc@" + (newUser.Birthday?.ToString("ddMMyyyy") ?? "DefaultDate");
             var result = await _userManager.CreateAsync(newUserEntity, passwordSeed);
 
             if (result.Succeeded)
             {
-                if (newUser.IsAdmin == true)
+                // Gán vai trò cho người dùng mới tạo
+                var roleName = newUser.IsAdmin == true ? Roles.Administrator : Roles.User;
+                var roleResult = await _userManager.AddToRoleAsync(newUserEntity, roleName);
+
+                if (!roleResult.Succeeded)
                 {
-                    var roleResult = await _userManager.AddToRoleAsync(newUserEntity, Roles.Administrator);
-                    if (!roleResult.Succeeded)
-                    {
-                        return Results.BadRequest("500|Add role failed");
-                    }
-                }
-                else
-                {
-                    var roleResult = await _userManager.AddToRoleAsync(newUserEntity, Roles.User);
-                    if (!roleResult.Succeeded)
-                    {
-                        return Results.BadRequest("500|Add role failed");
-                    }
+                    return Results.BadRequest("500|Failed to assign role to user");
                 }
 
-                return Results.Ok("200|User created");
+                // Gửi email chứa thông tin tài khoản và khóa riêng (private key)
+                await _emailSender.SendEmailRegisterAsync(newUser.Email, newUser.FullName, newUser.UserName,
+                    passwordSeed, privateKey);
+
+                return Results.Ok("200|User created successfully");
             }
             else
             {
-                return Results.BadRequest($"500|{string.Concat(result.Errors.Select(e => e.Description))}");
+                // Trả về lỗi nếu quá trình tạo tài khoản thất bại
+                return Results.BadRequest($"500|{string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
         }
-        
+
+
         //change password
         public async Task<IResult> ChangePassword(UserManager<ApplicationUser> _userManager,
             [FromBody] ChangePassword changePassword, IUser _user)
@@ -112,7 +122,8 @@ namespace Base_BE.Endpoints
                     return Results.BadRequest("400| Invalid UserId provided.");
                 }
 
-                var isOldPasswordCorrect = await _userManager.CheckPasswordAsync(currentUser, changePassword.oldPassword);
+                var isOldPasswordCorrect =
+                    await _userManager.CheckPasswordAsync(currentUser, changePassword.oldPassword);
                 if (!isOldPasswordCorrect)
                 {
                     return Results.BadRequest("400| The old password is incorrect.");
@@ -123,9 +134,12 @@ namespace Base_BE.Endpoints
                     return Results.BadRequest("400| The new password and confirmation do not match.");
                 }
 
-                var result = await _userManager.ChangePasswordAsync(currentUser, changePassword.oldPassword, changePassword.newPassword);
+                var result = await _userManager.ChangePasswordAsync(currentUser, changePassword.oldPassword,
+                    changePassword.newPassword);
                 if (result.Succeeded)
                 {
+                    currentUser.ChangePasswordFirstTime = true;
+                    _userManager.UpdateAsync(currentUser).Wait();
                     return Results.Ok("200| Password changed successfully.");
                 }
                 else
@@ -141,11 +155,12 @@ namespace Base_BE.Endpoints
                 return Results.Problem("An error occurred while changing the password.", statusCode: 500);
             }
         }
-        
+
 /*
 C****: Update User
 */
-        public async Task<IResult> UpdateUser(UserManager<ApplicationUser> _userManager, [FromBody] UpdateUser updateUser,
+        public async Task<IResult> UpdateUser(UserManager<ApplicationUser> _userManager,
+            [FromBody] UpdateUser updateUser,
             [FromServices] IUser _user)
         {
             try
@@ -161,11 +176,12 @@ C****: Update User
                 {
                     return Results.BadRequest("400|UserId không hợp lệ !");
                 }
-                
-                if(!updateUser.CellPhone.IsNullOrEmpty()) currentUser.CellPhone = updateUser.CellPhone;
-                if(!updateUser.Address.IsNullOrEmpty()) currentUser.Address = updateUser.Address;
-                if(!updateUser.FullName.IsNullOrEmpty()) currentUser.FullName = updateUser.FullName;
-        
+
+                if (!updateUser.CellPhone.IsNullOrEmpty()) currentUser.CellPhone = updateUser.CellPhone;
+                if (!updateUser.Address.IsNullOrEmpty()) currentUser.Address = updateUser.Address;
+                if (!updateUser.FullName.IsNullOrEmpty()) currentUser.FullName = updateUser.FullName;
+                currentUser.UpdateDate = DateTime.Now;
+
                 var result = await _userManager.UpdateAsync(currentUser);
                 if (result.Succeeded)
                 {
@@ -181,6 +197,75 @@ C****: Update User
                 Console.WriteLine("error", ex.Message);
                 return Results.Problem("An error occurred while updating the user", statusCode: 500);
             }
+        }
+
+        //change email
+        public async Task<IResult> ChangeEmail([FromBody] ChangeEmail changeEmail,
+            [FromServices] UserManager<ApplicationUser> _userManager, IUser _user)
+        {
+            try
+            {
+                if (changeEmail == null || string.IsNullOrEmpty(_user.Id))
+                {
+                    return Results.BadRequest("400| Missing or invalid user ID or change password data.");
+                }
+
+                var currentUser = await _userManager.FindByIdAsync(_user.Id);
+                if (currentUser == null)
+                {
+                    return Results.BadRequest("400| Invalid UserId provided.");
+                }
+
+                currentUser.NewEmail = changeEmail.NewEmail;
+                var res = await _userManager.UpdateAsync(currentUser);
+                if (res.Succeeded)
+                {
+                    return Results.Ok("200| Email changed successfully.");
+                }
+
+                return Results.BadRequest("400| Change email failed.");
+            }
+            catch (Exception ex)
+            {
+                // Log the full stack trace here if possible for more in-depth debugging.
+                Console.WriteLine($"Error occurred while changing password: {ex}");
+                return Results.Problem("An error occurred while changing the password.", statusCode: 500);
+            }
+        }
+
+        public async Task<IResult> SendOTP([FromBody] SendOTPRequest request, [FromServices] OTPService _otpService,
+            [FromServices] IEmailSender _emailSender, [FromServices] IUser _user)
+        {
+            var otp = _otpService.GenerateOTP();
+            if (request.Email != null)
+            {
+                _otpService.SaveOTP(request.Email, otp);
+
+                await _emailSender.SendEmailAsync(request.Email, _user.UserName!, $"Mã xác minh của bạn là: {otp}");
+            }
+
+            return Results.Ok("200|OTP sent successfully");
+        }
+
+        public async Task<IResult> VerifyOTP([FromBody] VerifyOTPRequest request, [FromServices] OTPService _otpService,
+            [FromServices] UserManager<ApplicationUser> _userManager, [FromServices] IUser _user)
+        {
+            var isValid = _otpService.VerifyOTP(request.Email, request.OTP);
+
+            if (isValid)
+            {
+                var currentUser = await _userManager.FindByIdAsync(_user.Id);
+                if (currentUser != null)
+                {
+                    currentUser.EmailConfirmed = true;
+                    await _userManager.UpdateAsync(currentUser);
+                    return Results.Ok("200|Xác minh thành công.");
+                }
+
+                return Results.BadRequest("khong tim thay nguoi dung.");
+            }
+
+            return Results.BadRequest("Mã xác minh không hợp lệ hoặc đã hết hạn.");
         }
     }
 }
