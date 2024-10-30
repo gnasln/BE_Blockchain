@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Base_BE.Application.Common.Interfaces;
 using Base_BE.Domain.Constants;
+using Base_BE.Dtos;
 
 namespace Base_BE.Endpoints
 {
@@ -21,7 +22,8 @@ namespace Base_BE.Endpoints
             
             app.MapGroup(this)
                 .RequireAuthorization()
-                .MapPut(ChangePassword, "/change-password");
+                .MapPut(ChangePassword, "/change-password")
+                .MapPatch(UpdateUser, "/update-user");
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
@@ -139,6 +141,46 @@ namespace Base_BE.Endpoints
                 return Results.Problem("An error occurred while changing the password.", statusCode: 500);
             }
         }
+        
+/*
+C****: Update User
+*/
+        public async Task<IResult> UpdateUser(UserManager<ApplicationUser> _userManager, [FromBody] UpdateUser updateUser,
+            [FromServices] IUser _user)
+        {
+            try
+            {
+                var userId = _user.Id;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Results.BadRequest("400|UserId is empty");
+                }
 
+                var currentUser = await _userManager.FindByIdAsync(userId);
+                if (currentUser == null)
+                {
+                    return Results.BadRequest("400|UserId không hợp lệ !");
+                }
+                
+                if(!updateUser.CellPhone.IsNullOrEmpty()) currentUser.CellPhone = updateUser.CellPhone;
+                if(!updateUser.Address.IsNullOrEmpty()) currentUser.Address = updateUser.Address;
+                if(!updateUser.FullName.IsNullOrEmpty()) currentUser.FullName = updateUser.FullName;
+        
+                var result = await _userManager.UpdateAsync(currentUser);
+                if (result.Succeeded)
+                {
+                    return Results.Ok("200|User updated successfully");
+                }
+                else
+                {
+                    return Results.BadRequest($"500|{string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("error", ex.Message);
+                return Results.Problem("An error occurred while updating the user", statusCode: 500);
+            }
+        }
     }
 }
