@@ -6,6 +6,7 @@ using ServiceStack;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Base_BE.Application.Common.Interfaces;
 using Base_BE.Domain.Constants;
 
 namespace Base_BE.Endpoints
@@ -16,6 +17,11 @@ namespace Base_BE.Endpoints
         {
             app.MapGroup(this)
                 .MapPost(RegisterUser, "/register");
+            
+            
+            app.MapGroup(this)
+                .RequireAuthorization()
+                .MapPut(ChangePassword, "/change-password");
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
@@ -86,5 +92,53 @@ namespace Base_BE.Endpoints
                 return Results.BadRequest($"500|{string.Concat(result.Errors.Select(e => e.Description))}");
             }
         }
+        
+        //change password
+        public async Task<IResult> ChangePassword(UserManager<ApplicationUser> _userManager,
+            [FromBody] ChangePassword changePassword, IUser _user)
+        {
+            try
+            {
+                if (changePassword == null || string.IsNullOrEmpty(_user.Id))
+                {
+                    return Results.BadRequest("400| Missing or invalid user ID or change password data.");
+                }
+
+                var currentUser = await _userManager.FindByIdAsync(_user.Id);
+                if (currentUser == null)
+                {
+                    return Results.BadRequest("400| Invalid UserId provided.");
+                }
+
+                var isOldPasswordCorrect = await _userManager.CheckPasswordAsync(currentUser, changePassword.oldPassword);
+                if (!isOldPasswordCorrect)
+                {
+                    return Results.BadRequest("400| The old password is incorrect.");
+                }
+
+                if (!changePassword.newPassword.Equals(changePassword.comfirmedPassword))
+                {
+                    return Results.BadRequest("400| The new password and confirmation do not match.");
+                }
+
+                var result = await _userManager.ChangePasswordAsync(currentUser, changePassword.oldPassword, changePassword.newPassword);
+                if (result.Succeeded)
+                {
+                    return Results.Ok("200| Password changed successfully.");
+                }
+                else
+                {
+                    var errorDescriptions = string.Join(", ", result.Errors.Select(e => e.Description));
+                    return Results.BadRequest($"500| {errorDescriptions}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the full stack trace here if possible for more in-depth debugging.
+                Console.WriteLine($"Error occurred while changing password: {ex}");
+                return Results.Problem("An error occurred while changing the password.", statusCode: 500);
+            }
+        }
+
     }
 }
