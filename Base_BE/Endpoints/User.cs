@@ -57,7 +57,8 @@ namespace Base_BE.Endpoints
             };
 
             // Tạo tài khoản người dùng mới
-            var result = await _userManager.CreateAsync(newUserEntity, PasswordGenerator.GenerateRandomPassword(12));
+            var passwordSeed = "Abc@" + (newUser.Birthday?.ToString("ddMMyyyy") ?? "DefaultDate");
+            var result = await _userManager.CreateAsync(newUserEntity, passwordSeed);
 
             if (result.Succeeded)
             {
@@ -83,49 +84,6 @@ namespace Base_BE.Endpoints
             else
             {
                 return Results.BadRequest($"500|{string.Concat(result.Errors.Select(e => e.Description))}");
-            }
-        }
-
-
-        public static class PasswordGenerator
-        {
-            public static string GenerateRandomPassword(int length)
-            {
-                // Điều kiện tối thiểu cho mật khẩu
-                const string lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
-                const string uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                const string numberChars = "1234567890";
-                const string specialChars = "!@#$%^&*()";
-
-                // Kiểm tra độ dài mật khẩu tối thiểu
-                if (length < 8)
-                    throw new ArgumentException("Độ dài mật khẩu phải ít nhất 8 ký tự.");
-
-                // Chọn ít nhất 1 ký tự từ mỗi nhóm để đảm bảo yêu cầu
-                Random random = new Random();
-                StringBuilder result = new StringBuilder(length);
-
-                result.Append(lowercaseChars[random.Next(lowercaseChars.Length)]);
-                result.Append(uppercaseChars[random.Next(uppercaseChars.Length)]);
-                result.Append(numberChars[random.Next(numberChars.Length)]);
-                result.Append(specialChars[random.Next(specialChars.Length)]);
-
-                // Phần còn lại sẽ ngẫu nhiên từ tất cả các ký tự hợp lệ
-                const string allValidChars = lowercaseChars + uppercaseChars + numberChars + specialChars;
-                byte[] randomBytes = new byte[length - 4];
-
-                using (var rng = RandomNumberGenerator.Create())
-                {
-                    rng.GetBytes(randomBytes);
-                }
-
-                foreach (byte b in randomBytes)
-                {
-                    result.Append(allValidChars[b % allValidChars.Length]);
-                }
-
-                // Đảo ngẫu nhiên các ký tự để mật khẩu không có mẫu dễ đoán
-                return new string(result.ToString().OrderBy(_ => random.Next()).ToArray());
             }
         }
     }
