@@ -2234,6 +2234,7 @@
           "Microsoft.EntityFrameworkCore.SqlServer": "8.0.4",
           "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.1",
+          "MySql.EntityFrameworkCore": "8.0.8",
           "OpenIddict.AspNetCore": "5.8.0",
           "OpenIddict.EntityFrameworkCore": "5.5.0",
           "OpenIddict.Quartz": "5.5.0",

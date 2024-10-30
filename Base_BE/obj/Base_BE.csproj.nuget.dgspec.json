@@ -242,6 +242,10 @@
               "target": "Package",
               "version": "[8.0.1, )"
             },
+            "MySql.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.2, )"
+            },
             "OpenIddict.AspNetCore": {
               "target": "Package",
               "version": "[5.5.0, )"

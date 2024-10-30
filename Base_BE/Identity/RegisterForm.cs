@@ -16,6 +16,7 @@ namespace Base_BE.Identity
         public string? CellPhone { get; set; }
         public string? ImageUrl { get; set; }
 		public string? UrlIdentityCardImage { get; set; }
+		public bool? IsAdmin { get; set; }
 
 	}
 }

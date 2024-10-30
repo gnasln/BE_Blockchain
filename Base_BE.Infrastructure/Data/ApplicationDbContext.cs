@@ -12,4 +12,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
   
     public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
     
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.UserName).IsUnique();
+            entity.HasIndex(e => e.CellPhone).IsUnique();
+            entity.HasIndex(e => e.IdentityCardNumber).IsUnique();
+        });
+    }
+    
 }
