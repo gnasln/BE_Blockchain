@@ -3,14 +3,14 @@ using Base_BE.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ServiceStack;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using Base_BE.Application.Common.Interfaces;
 using Base_BE.Domain.Constants;
 using Base_BE.Dtos;
 using Base_BE.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using NetHelper.Common.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Base_BE.Endpoints
 {
@@ -28,7 +28,12 @@ namespace Base_BE.Endpoints
                 .MapPatch(UpdateUser, "/update-user")
                 .MapPost(SendOTP, "/send-otp")
                 .MapPost(VerifyOTP, "/verify-otp")
-                .MapPut(ChangeEmail, "/change-email");
+                .MapPut(ChangeEmail, "/change-email")
+                .MapGet(GetCurrentUser, "/UserInfo");
+
+            app.MapGroup(this)
+                .RequireAuthorization("admin")
+                .MapGet(GetAllUsers, "/get-all-users");
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
@@ -266,6 +271,76 @@ C****: Update User
             }
 
             return Results.BadRequest("Mã xác minh không hợp lệ hoặc đã hết hạn.");
+        }
+
+        public async Task<ResultCustomPaginate<IEnumerable<UserDto>>> GetAllUsers([FromServices] UserManager<ApplicationUser> _userManager, int page, int pageSize)
+        {
+            var usersQuery = _userManager.Users;
+
+            var usersList = await usersQuery.ToListAsync();
+
+            var usersDtoList = new List<UserDto>();
+
+            foreach (var u in usersList)
+            {
+
+                // Tạo đối tượng UserDto
+                var userDto = new UserDto
+                {
+                    Fullname = u.FullName,
+                    UserName = u.UserName,
+                    Email = u.Email,
+                    CellPhone = u.PhoneNumber,
+                    status = u.Status,
+                    Birthday = u.Birthday,
+                    Address = u.Address,
+                    CreatedAt = u.CreateDate,
+                };
+
+                usersDtoList.Add(userDto);
+            }
+
+            // Sort by ActivationDate
+            var sortedUsersDtoList = usersDtoList.OrderByDescending(u => u.CreatedAt).ToList();
+
+            // Áp dụng phân trang
+            var paginatedUsers = sortedUsersDtoList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var result = new ResultCustomPaginate<IEnumerable<UserDto>>
+            {
+                Data = paginatedUsers,
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalItems = sortedUsersDtoList.Count,
+                TotalPages = (int)Math.Ceiling((double)sortedUsersDtoList.Count / pageSize)
+            };
+
+            return result;
+        }
+
+        public async Task<IResult> GetCurrentUser([FromServices] UserManager<ApplicationUser> _userManager, IUser _user)
+        {
+            var currentUser = await _userManager.FindByIdAsync(_user.Id);
+            if (currentUser == null)
+            {
+                return Results.BadRequest("400|User not found");
+            }
+
+            var userDto = new UserDto
+            {
+                Fullname = currentUser.FullName,
+                UserName = currentUser.UserName,
+                Email = currentUser.Email,
+                Gender = currentUser.Gender,
+                CellPhone = currentUser.PhoneNumber,
+                status = currentUser.Status,
+                Birthday = currentUser.Birthday,
+                Address = currentUser.Address,
+                CreatedAt = currentUser.CreateDate,
+                Role = (await _userManager.GetRolesAsync(currentUser)).FirstOrDefault()
+            };
+
+            return Results.Ok(userDto);
         }
     }
 }
