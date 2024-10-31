@@ -82,7 +82,7 @@ namespace Base_BE.Endpoints
             };
 
             // Tạo mật khẩu mặc định dựa trên ngày sinh hoặc giá trị mặc định nếu không có ngày sinh
-            var passwordSeed = "Abc@" + (newUser.Birthday?.ToString("ddMMyyyy") ?? "DefaultDate");
+            var passwordSeed = GenerateSecurePassword();
             var result = await _userManager.CreateAsync(newUserEntity, passwordSeed);
 
             if (result.Succeeded)
@@ -107,6 +107,33 @@ namespace Base_BE.Endpoints
                 // Trả về lỗi nếu quá trình tạo tài khoản thất bại
                 return Results.BadRequest($"500|{string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
+        }
+        private string GenerateSecurePassword()
+        {
+            const int length = 12;
+            const string upperCase = "ABCDEFGHJKLMNOPQRSTUVWXYZ";
+            const string lowerCase = "abcdefghijklmnopqrstuvwxyz";
+            const string digits = "0123456789";
+            const string specialChars = "!@#$%^&*?_-";
+            const string allChars = upperCase + lowerCase + digits + specialChars;
+
+            var random = new Random();
+            var password = new char[length];
+
+            // Ensure the password has at least one character from each category
+            password[0] = upperCase[random.Next(upperCase.Length)];
+            password[1] = lowerCase[random.Next(lowerCase.Length)];
+            password[2] = digits[random.Next(digits.Length)];
+            password[3] = specialChars[random.Next(specialChars.Length)];
+
+            // Fill the rest of the password with random characters from all categories
+            for (int i = 4; i < length; i++)
+            {
+                password[i] = allChars[random.Next(allChars.Length)];
+            }
+
+            // Shuffle the characters to ensure randomness
+            return new string(password.OrderBy(x => random.Next()).ToArray());
         }
 
 
