@@ -1,4 +1,5 @@
 ﻿using Base_BE.Application.Common.Interfaces;
+using Base_BE.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,8 +12,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
         : base(options) { }
   
     public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
-    
-    
+    public DbSet<Position> Positions => Set<Position>();
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -23,6 +25,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
             entity.HasIndex(e => e.UserName).IsUnique();
             entity.HasIndex(e => e.CellPhone).IsUnique();
             entity.HasIndex(e => e.IdentityCardNumber).IsUnique();
+        });
+
+        modelBuilder.Entity<Position>(entity =>
+        {
+            entity.HasIndex(e => e.PositionName).IsUnique();
         });
     }
     

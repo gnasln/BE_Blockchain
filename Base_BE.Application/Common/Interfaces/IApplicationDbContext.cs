@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using Microsoft.EntityFrameworkCore;
 
 namespace Base_BE.Application.Common.Interfaces
 {
     public interface IApplicationDbContext
     {
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+        DbSet<Domain.Entities.Position> Positions { get; }
     }
 }
