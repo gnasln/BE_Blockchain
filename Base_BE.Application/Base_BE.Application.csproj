@@ -18,6 +18,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\NetHelper\NetHelper.csproj" />
+		<ProjectReference Include="..\Base_BE.Domain\Base_BE.Domain.csproj" />
 	</ItemGroup>
 
 </Project>
