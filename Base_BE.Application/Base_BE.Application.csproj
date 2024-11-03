@@ -21,4 +21,8 @@
 		<ProjectReference Include="..\Base_BE.Domain\Base_BE.Domain.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Vote\Queries\" />
+	</ItemGroup>
+
 </Project>

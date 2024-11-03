@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Base_BE.Domain.Entities;
 using Base_BE.Helpers;
 using Base_BE.Infrastructure.Data;
 using Base_BE.ViewModels.Authorization;

@@ -1,11 +1,11 @@
 ﻿using Base_BE.Identity;
-using Base_BE.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ServiceStack;
 using System.Security.Cryptography;
 using Base_BE.Application.Common.Interfaces;
 using Base_BE.Domain.Constants;
+using Base_BE.Domain.Entities;
 using Base_BE.Dtos;
 using Base_BE.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;

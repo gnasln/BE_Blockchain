@@ -40,7 +40,7 @@ namespace Base_BE.Infrastructure.Data.Migrations
                     Address = table.Column<string>(type: "longtext", nullable: true),
                     Birthday = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Email = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
-                    CellPhone = table.Column<string>(type: "longtext", nullable: true),
+                    CellPhone = table.Column<string>(type: "varchar(255)", nullable: true),
                     Status = table.Column<string>(type: "longtext", nullable: true),
                     ChangePasswordFirstTime = table.Column<bool>(type: "tinyint(1)", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -51,9 +51,10 @@ namespace Base_BE.Infrastructure.Data.Migrations
                     EmailVerifyKey = table.Column<string>(type: "longtext", nullable: true),
                     NewEmail = table.Column<string>(type: "longtext", nullable: true),
                     IdentityCardImage = table.Column<string>(type: "longtext", nullable: true),
-                    IdentityCardNumber = table.Column<string>(type: "longtext", nullable: true),
+                    IdentityCardNumber = table.Column<string>(type: "varchar(255)", nullable: true),
                     IdentityCardDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     IdentityCardPlace = table.Column<string>(type: "longtext", nullable: true),
+                    PublicKey = table.Column<string>(type: "longtext", nullable: true),
                     UserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true),
@@ -71,6 +72,22 @@ namespace Base_BE.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "BallotVoters",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    CandidateId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    VoterId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    VotedTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Address = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BallotVoters", x => x.Id);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -118,6 +135,23 @@ namespace Base_BE.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OpenIddictScopes", x => x.Id);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Positions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    PositionName = table.Column<string>(type: "varchar(255)", nullable: false),
+                    PositionDescription = table.Column<string>(type: "longtext", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Status = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Positions", x => x.Id);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -233,6 +267,40 @@ namespace Base_BE.Infrastructure.Data.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    FiredUserId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    ReceiveUserId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false),
+                    IsRead = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsTrash = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    Content = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: false),
+                    ExtraInfo = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notifications_AspNetUsers_FiredUserId",
+                        column: x => x.FiredUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Notifications_AspNetUsers_ReceiveUserId",
+                        column: x => x.ReceiveUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "OpenIddictAuthorizations",
                 columns: table => new
                 {
@@ -254,6 +322,35 @@ namespace Base_BE.Infrastructure.Data.Migrations
                         column: x => x.ApplicationId,
                         principalTable: "OpenIddictApplications",
                         principalColumn: "Id");
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Votes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    VoteName = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
+                    MaxCandidateVote = table.Column<int>(type: "int", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ExpiredDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    PositionId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Status = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    Tenure = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    StartDateTenure = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndDateTenure = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ExtraData = table.Column<string>(type: "longtext", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Votes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Votes_Positions_PositionId",
+                        column: x => x.PositionId,
+                        principalTable: "Positions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -291,6 +388,37 @@ namespace Base_BE.Infrastructure.Data.Migrations
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
+            migrationBuilder.CreateTable(
+                name: "UserVotes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    UserId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    VoteId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Role = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    BallotTransaction = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
+                    BallotAddress = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
+                    Status = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserVotes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserVotes_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserVotes_Votes_VoteId",
+                        column: x => x.VoteId,
+                        principalTable: "Votes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -323,10 +451,44 @@ namespace Base_BE.Infrastructure.Data.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_CellPhone",
+                table: "AspNetUsers",
+                column: "CellPhone",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_Email",
+                table: "AspNetUsers",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_IdentityCardNumber",
+                table: "AspNetUsers",
+                column: "IdentityCardNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_UserName",
+                table: "AspNetUsers",
+                column: "UserName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_FiredUserId",
+                table: "Notifications",
+                column: "FiredUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_ReceiveUserId",
+                table: "Notifications",
+                column: "ReceiveUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OpenIddictApplications_ClientId",
@@ -360,6 +522,27 @@ namespace Base_BE.Infrastructure.Data.Migrations
                 table: "OpenIddictTokens",
                 column: "ReferenceId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Positions_PositionName",
+                table: "Positions",
+                column: "PositionName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserVotes_UserId",
+                table: "UserVotes",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserVotes_VoteId",
+                table: "UserVotes",
+                column: "VoteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Votes_PositionId",
+                table: "Votes",
+                column: "PositionId");
         }
 
         /// <inheritdoc />
@@ -381,22 +564,37 @@ namespace Base_BE.Infrastructure.Data.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "BallotVoters");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
+
+            migrationBuilder.DropTable(
                 name: "OpenIddictScopes");
 
             migrationBuilder.DropTable(
                 name: "OpenIddictTokens");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
+                name: "UserVotes");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "OpenIddictAuthorizations");
 
             migrationBuilder.DropTable(
+                name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Votes");
+
+            migrationBuilder.DropTable(
                 name: "OpenIddictApplications");
+
+            migrationBuilder.DropTable(
+                name: "Positions");
         }
     }
 }

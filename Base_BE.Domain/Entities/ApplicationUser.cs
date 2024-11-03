@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Base_BE.Infrastructure.Data
+namespace Base_BE.Domain.Entities
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUser : IdentityUser, IApplicationUser
     {
 		public string? FullName { get; set; }
 		public bool? Gender { get; set; } = true;

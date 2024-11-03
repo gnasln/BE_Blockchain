@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Quartz;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using Ardalis.GuardClauses;
+using Base_BE.Domain.Entities;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

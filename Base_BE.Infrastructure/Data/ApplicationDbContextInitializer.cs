@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenIddict.Abstractions;
 using System.Globalization;
+using Base_BE.Domain.Entities;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 

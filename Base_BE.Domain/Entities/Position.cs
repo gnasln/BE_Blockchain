@@ -10,6 +10,10 @@ namespace Base_BE.Domain.Entities
         public Guid Id { get; set; }
         public string PositionName { get; set; }
         public string PositionDescription { get; set; } = string.Empty;
+        public DateTime CreatedDate { get; set; }
+        public Guid CreatedBy { get; set; }
         public bool Status { get; set; } = false;
+        
+        public ICollection<Vote> Votes { get; set; }
     }
 }

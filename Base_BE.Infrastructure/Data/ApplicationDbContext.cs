@@ -13,6 +13,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
   
     public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
     public DbSet<Position> Positions => Set<Position>();
+    public DbSet<Vote> Votes => Set<Vote>();
+    public DbSet<UserVote> UserVotes => Set<UserVote>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<BallotVoter> BallotVoters => Set<BallotVoter>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,6 +35,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
         {
             entity.HasIndex(e => e.PositionName).IsUnique();
         });
+        
     }
     
 }
