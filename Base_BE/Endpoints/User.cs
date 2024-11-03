@@ -29,11 +29,14 @@ namespace Base_BE.Endpoints
                 .MapPost(SendOTP, "/send-otp")
                 .MapPost(VerifyOTP, "/verify-otp")
                 .MapPut(ChangeEmail, "/change-email")
-                .MapGet(GetCurrentUser, "/UserInfo");
+                .MapGet(GetCurrentUser, "/UserInfo")
+                .MapGet(CheckPasswordFirstTime, "/check-password-first-time");
+                ;
 
             app.MapGroup(this)
                 .RequireAuthorization("admin")
-                .MapGet(GetAllUsers, "/get-all-users");
+                .MapGet(GetAllUsers, "/get-all-users")
+                .MapPost(DisableAccount, "/disable-account/{id}");
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
@@ -368,6 +371,36 @@ C****: Update User
             };
 
             return Results.Ok(userDto);
+        }
+        
+        public async Task<IResult> CheckPasswordFirstTime([FromServices] UserManager<ApplicationUser> _userManager, IUser _user)
+        {
+            var currentUser = await _userManager.FindByIdAsync(_user.Id);
+            if (currentUser == null)
+            {
+                return Results.BadRequest("400|User not found");
+            }
+            var result = currentUser.ChangePasswordFirstTime;
+            if (result == true)
+            {
+                return Results.Ok("200|Password was changed first time.");
+            }
+
+            return Results.BadRequest("400|Password was not changed first time.");
+        }
+        
+        public async Task<IResult> DisableAccount([FromRoute] string id, [FromServices] UserManager<ApplicationUser> _userManager)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return Results.BadRequest("400|User not found");
+            }
+
+            user.Status = "Disabled";
+            await _userManager.UpdateAsync(user);
+
+            return Results.Ok("200|User disabled successfully");
         }
     }
 }
