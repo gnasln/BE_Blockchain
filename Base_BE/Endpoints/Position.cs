@@ -16,6 +16,7 @@ namespace Base_BE.Endpoints
                 .MapPut(UpdatePosition, "/update")
                 .MapDelete(DeletePosition, "/delete/{id}")
                 .MapGet(GetAllPosition, "/view-list")
+                .MapGet(GetPositionById, "/view/{id}")
             ;
         }
 
@@ -64,6 +65,17 @@ namespace Base_BE.Endpoints
                 PageNumber = result.PageNumber,
                 PageSize = result.PageSize
             };
+        }
+        
+        public async Task<IResult> GetPositionById([FromServices] ISender sender, [FromRoute] Guid id)
+        {
+            var result = await sender.Send(new GetPositionByIdQuery() { Id = id });
+            return Results.Ok(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
         }
     }
 }
