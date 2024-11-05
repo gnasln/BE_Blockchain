@@ -24,4 +24,5 @@ public class Vote : EndpointGroupBase
             data = result.Data
         });
     }
+    
 }

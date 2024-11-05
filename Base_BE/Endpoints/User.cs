@@ -31,7 +31,7 @@ namespace Base_BE.Endpoints
                 .MapPut(ChangeEmail, "/change-email")
                 .MapGet(GetCurrentUser, "/UserInfo")
                 .MapGet(CheckPasswordFirstTime, "/check-password-first-time");
-                ;
+            ;
 
             app.MapGroup(this)
                 .RequireAuthorization("admin")
@@ -111,6 +111,7 @@ namespace Base_BE.Endpoints
                 return Results.BadRequest($"500|{string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
         }
+
         private string GenerateSecurePassword()
         {
             const int length = 12;
@@ -268,15 +269,26 @@ C****: Update User
             }
         }
 
-        public async Task<IResult> SendOTP([FromBody] SendOTPRequest request, [FromServices] OTPService _otpService,
-            [FromServices] IEmailSender _emailSender, [FromServices] IUser _user)
+        public async Task<IResult> SendOTP([FromServices] OTPService _otpService,
+            [FromServices] IEmailSender _emailSender, [FromServices] IUser _user, [FromServices] UserManager<ApplicationUser> _userManager)
         {
-            var otp = _otpService.GenerateOTP();
-            if (request.Email != null)
+            var currentUser = await _userManager.FindByIdAsync(_user.Id);
+            if (currentUser == null)
             {
-                _otpService.SaveOTP(request.Email, otp);
+                return Results.NotFound("khong tim thay nguoi dung.");
+            }
+            var otp = _otpService.GenerateOTP();
+            if (!currentUser.Email.IsNullOrEmpty() && currentUser.NewEmail.IsNullOrEmpty())
+            {
+                _otpService.SaveOTP(currentUser.Email!, otp);
 
-                await _emailSender.SendEmailAsync(request.Email, _user.UserName!, $"Mã xác minh của bạn là: {otp}");
+                await _emailSender.SendEmailAsync(currentUser.Email!, _user.UserName!, $"Mã xác minh của bạn là: {otp}");
+            }
+            else
+            {
+                _otpService.SaveOTP(currentUser.Email!, otp);
+
+                await _emailSender.SendEmailAsync(currentUser.NewEmail!, _user.UserName!, $"Mã xác minh của bạn là: {otp}");
             }
 
             return Results.Ok("200|OTP sent successfully");
@@ -285,25 +297,36 @@ C****: Update User
         public async Task<IResult> VerifyOTP([FromBody] VerifyOTPRequest request, [FromServices] OTPService _otpService,
             [FromServices] UserManager<ApplicationUser> _userManager, [FromServices] IUser _user)
         {
-            var isValid = _otpService.VerifyOTP(request.Email, request.OTP);
+            var currentUser = await _userManager.FindByIdAsync(_user.Id);
+            if (currentUser == null)
+            {
+                return Results.NotFound("khong tim thay nguoi dung.");
+            }
+
+            var isValid = false;
+            
+            if(!currentUser.Email.IsNullOrEmpty() && currentUser.NewEmail.IsNullOrEmpty())
+            {
+                isValid = currentUser.Email != null && _otpService.VerifyOTP(currentUser.Email, request.OTP);
+            }
+            else
+            {
+                isValid = currentUser.NewEmail != null && _otpService.VerifyOTP(currentUser.NewEmail, request.OTP);
+            }
+            
 
             if (isValid)
             {
-                var currentUser = await _userManager.FindByIdAsync(_user.Id);
-                if (currentUser != null)
-                {
-                    currentUser.EmailConfirmed = true;
-                    await _userManager.UpdateAsync(currentUser);
-                    return Results.Ok("200|Xác minh thành công.");
-                }
-
-                return Results.BadRequest("khong tim thay nguoi dung.");
+                currentUser.EmailConfirmed = true;
+                await _userManager.UpdateAsync(currentUser);
+                return Results.Ok("200|Xác minh thành công.");
             }
 
             return Results.BadRequest("Mã xác minh không hợp lệ hoặc đã hết hạn.");
         }
 
-        public async Task<ResultCustomPaginate<IEnumerable<UserDto>>> GetAllUsers([FromServices] UserManager<ApplicationUser> _userManager, int page, int pageSize)
+        public async Task<ResultCustomPaginate<IEnumerable<UserDto>>> GetAllUsers(
+            [FromServices] UserManager<ApplicationUser> _userManager, int page, int pageSize)
         {
             var usersQuery = _userManager.Users;
 
@@ -313,10 +336,10 @@ C****: Update User
 
             foreach (var u in usersList)
             {
-
                 // Tạo đối tượng UserDto
                 var userDto = new UserDto
                 {
+                    Id = u.Id,
                     Fullname = u.FullName,
                     UserName = u.UserName,
                     Email = u.Email,
@@ -358,6 +381,7 @@ C****: Update User
 
             var userDto = new UserDto
             {
+                Id = currentUser.Id,
                 Fullname = currentUser.FullName,
                 UserName = currentUser.UserName,
                 Email = currentUser.Email,
@@ -372,14 +396,16 @@ C****: Update User
 
             return Results.Ok(userDto);
         }
-        
-        public async Task<IResult> CheckPasswordFirstTime([FromServices] UserManager<ApplicationUser> _userManager, IUser _user)
+
+        public async Task<IResult> CheckPasswordFirstTime([FromServices] UserManager<ApplicationUser> _userManager,
+            IUser _user)
         {
             var currentUser = await _userManager.FindByIdAsync(_user.Id);
             if (currentUser == null)
             {
                 return Results.BadRequest("400|User not found");
             }
+
             var result = currentUser.ChangePasswordFirstTime;
             if (result == true)
             {
@@ -388,10 +414,12 @@ C****: Update User
 
             return Results.BadRequest("400|Password was not changed first time.");
         }
-        
-        public async Task<IResult> DisableAccount([FromRoute] string id, [FromServices] UserManager<ApplicationUser> _userManager)
+
+        public async Task<IResult> DisableAccount([FromRoute] string id,
+            [FromServices] UserManager<ApplicationUser> _userManager)
         {
             var user = await _userManager.FindByIdAsync(id);
+            
             if (user == null)
             {
                 return Results.BadRequest("400|User not found");
