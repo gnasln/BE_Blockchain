@@ -387,6 +387,7 @@ C****: Update User
                 Fullname = currentUser.FullName,
                 UserName = currentUser.UserName,
                 Email = currentUser.Email,
+                NewEmail = currentUser.NewEmail,
                 Gender = currentUser.Gender,
                 CellPhone = currentUser.PhoneNumber,
                 status = currentUser.Status,
@@ -394,6 +395,7 @@ C****: Update User
                 Address = currentUser.Address,
                 CreatedAt = currentUser.CreateDate,
                 Role = (await _userManager.GetRolesAsync(currentUser)).FirstOrDefault()
+                
             };
 
             return Results.Ok(userDto);
@@ -450,6 +452,7 @@ C****: Update User
                     Fullname = user.FullName,
                     UserName = user.UserName,
                     Email = user.Email,
+                    NewEmail = user.NewEmail,
                     Gender = user.Gender,
                     CellPhone = user.PhoneNumber,
                     status = user.Status,
