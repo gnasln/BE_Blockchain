@@ -64,7 +64,7 @@ namespace Base_BE.Endpoints
             }
 
             // Tạo cặp khóa RSA
-            using var rsa = new RSACryptoServiceProvider(512);
+            using var rsa = new RSACryptoServiceProvider(1024);
             var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
             var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
 
@@ -272,28 +272,27 @@ C****: Update User
         }
 
         public async Task<IResult> SendOTP([FromServices] OTPService _otpService,
-            [FromServices] IEmailSender _emailSender, [FromServices] IUser _user, [FromServices] UserManager<ApplicationUser> _userManager)
+            [FromServices] IEmailSender _emailSender, [FromBody] SendOTPRequest request, [FromServices]IUser _user)
         {
-            var currentUser = await _userManager.FindByIdAsync(_user.Id);
-            if (currentUser == null)
+            try
             {
-                return Results.NotFound("khong tim thay nguoi dung.");
+                if (request == null || string.IsNullOrEmpty(request.Email))
+                {
+                    return Results.BadRequest("400|Email is required");
+                }
+                var otp = _otpService.GenerateOTP();
+
+                _otpService.SaveOTP(request.Email, otp);
+
+                await _emailSender.SendEmailAsync(request.Email, _user.UserName!
+                    , $"Mã xác minh của bạn là: {otp}");
+            
+                return Results.Ok("200|OTP sent successfully");
             }
-            var otp = _otpService.GenerateOTP();
-            if (!currentUser.Email.IsNullOrEmpty() && currentUser.NewEmail.IsNullOrEmpty())
+            catch (Exception e)
             {
-                _otpService.SaveOTP(currentUser.Email!, otp);
-
-                await _emailSender.SendEmailAsync(currentUser.Email!, _user.UserName!, $"Mã xác minh của bạn là: {otp}");
+                return Results.BadRequest("500|Error while sending OTP: " + e.Message);
             }
-            else
-            {
-                _otpService.SaveOTP(currentUser.Email!, otp);
-
-                await _emailSender.SendEmailAsync(currentUser.NewEmail!, _user.UserName!, $"Mã xác minh của bạn là: {otp}");
-            }
-
-            return Results.Ok("200|OTP sent successfully");
         }
 
         public async Task<IResult> VerifyOTP([FromBody] VerifyOTPRequest request, [FromServices] OTPService _otpService,
