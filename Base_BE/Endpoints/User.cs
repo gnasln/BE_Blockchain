@@ -36,7 +36,9 @@ namespace Base_BE.Endpoints
             app.MapGroup(this)
                 .RequireAuthorization("admin")
                 .MapGet(GetAllUsers, "/get-all-users")
-                .MapPost(DisableAccount, "/disable-account/{id}");
+                .MapPost(DisableAccount, "/disable-account/{id}")
+                .MapGet(GetUserById, "/get-user/{id}");
+                ;
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
@@ -429,6 +431,39 @@ C****: Update User
             await _userManager.UpdateAsync(user);
 
             return Results.Ok("200|User disabled successfully");
+        }
+
+        public async Task<IResult> GetUserById([FromServices] UserManager<ApplicationUser> _userManager,
+            [FromRoute] string id)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null)
+                {
+                    return Results.BadRequest("400|User not found");
+                }
+
+                var result = new UserDto
+                {
+                    Id = user.Id,
+                    Fullname = user.FullName,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Gender = user.Gender,
+                    CellPhone = user.PhoneNumber,
+                    status = user.Status,
+                    Birthday = user.Birthday,
+                    Address = user.Address,
+                    CreatedAt = user.CreateDate,
+                    Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault()
+                };
+                return Results.Ok(result);
+            }
+            catch (Exception e)
+            {
+                return Results.BadRequest(e.Message);
+            }
         }
     }
 }
