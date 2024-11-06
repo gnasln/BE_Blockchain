@@ -8,7 +8,8 @@ public class Vote : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         app.MapGroup(this)
-            .RequireAuthorization()
+            .RequireAuthorization("user")
+            .RequireAuthorization("admin")
             .MapPost(CreateVote, "/create")
             ;
         

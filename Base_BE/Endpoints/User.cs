@@ -23,7 +23,8 @@ namespace Base_BE.Endpoints
 
 
             app.MapGroup(this)
-                .RequireAuthorization()
+                .RequireAuthorization("user")
+                .RequireAuthorization("admin")
                 .MapPut(ChangePassword, "/change-password")
                 .MapPatch(UpdateUser, "/update-user")
                 .MapPost(SendOTP, "/send-otp")
@@ -423,13 +424,23 @@ C****: Update User
             [FromServices] UserManager<ApplicationUser> _userManager)
         {
             var user = await _userManager.FindByIdAsync(id);
-            
+    
             if (user == null)
             {
                 return Results.BadRequest("400|User not found");
             }
 
             user.Status = "Disabled";
+
+            // Remove all roles from the user
+            var roles = await _userManager.GetRolesAsync(user);
+            var removeRolesResult = await _userManager.RemoveFromRolesAsync(user, roles);
+
+            if (!removeRolesResult.Succeeded)
+            {
+                return Results.BadRequest($"500|Failed to remove roles: {string.Join(", ", removeRolesResult.Errors.Select(e => e.Description))}");
+            }
+
             await _userManager.UpdateAsync(user);
 
             return Results.Ok("200|User disabled successfully");
