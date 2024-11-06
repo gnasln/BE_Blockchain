@@ -30,7 +30,8 @@ namespace Base_BE.Endpoints
                 .MapPost(VerifyOTP, "/verify-otp")
                 .MapPut(ChangeEmail, "/change-email")
                 .MapGet(GetCurrentUser, "/UserInfo")
-                .MapGet(CheckPasswordFirstTime, "/check-password-first-time");
+                .MapGet(CheckPasswordFirstTime, "/check-password-first-time")
+                .MapPost(CheckPasswork, "/check-password")
             ;
 
             app.MapGroup(this)
@@ -463,6 +464,21 @@ C****: Update User
             {
                 return Results.BadRequest(e.Message);
             }
+        }
+
+        public async Task<IResult> CheckPasswork([FromServices] UserManager<ApplicationUser> _userManager, IUser _user,
+            [FromBody] checkPassword request)
+        {
+            var currentUser = await _userManager.FindByIdAsync(_user.Id);
+            if (currentUser != null)
+            {
+                var isPasswordCorrect = await _userManager.CheckPasswordAsync(currentUser, request.Password);
+                if (isPasswordCorrect)
+                {
+                    return Results.Ok("200|Password is correct");
+                }
+            }
+            return Results.BadRequest("400|Password is incorrect");
         }
     }
 }
