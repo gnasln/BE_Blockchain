@@ -7,6 +7,9 @@
         public string? UserName { get; set; }
         public string? Email { get; set; }
         public string? NewEmail { get; set; }
+        public string? IdentityCardNumber { get; set; }
+        public DateTime? IdentityCardDate { get; set; }
+        public string? IdentityCardPlace { get; set; }
         public bool? Gender { get; set; }
         public string? CellPhone { get; set; }
         public DateTime? Birthday { get; set; }

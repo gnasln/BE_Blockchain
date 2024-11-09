@@ -23,8 +23,7 @@ namespace Base_BE.Endpoints
 
 
             app.MapGroup(this)
-                .RequireAuthorization("user")
-                .RequireAuthorization("admin")
+                .RequireAuthorization()
                 .MapPut(ChangePassword, "/change-password")
                 .MapPatch(UpdateUser, "/update-user")
                 .MapPost(SendOTP, "/send-otp")
@@ -38,7 +37,7 @@ namespace Base_BE.Endpoints
             app.MapGroup(this)
                 .RequireAuthorization("admin")
                 .MapGet(GetAllUsers, "/get-all-users")
-                .MapPost(DisableAccount, "/disable-account/{id}")
+                // .MapPost(DisableAccount, "/disable-account/{id}")
                 .MapGet(GetUserById, "/get-user/{id}");
                 ;
         }
@@ -389,8 +388,11 @@ C****: Update User
                 UserName = currentUser.UserName,
                 Email = currentUser.Email,
                 NewEmail = currentUser.NewEmail,
+                IdentityCardNumber = currentUser.IdentityCardNumber,
+                IdentityCardDate = currentUser.IdentityCardDate,
+                IdentityCardPlace = currentUser.IdentityCardPlace,
                 Gender = currentUser.Gender,
-                CellPhone = currentUser.PhoneNumber,
+                CellPhone = currentUser.CellPhone,
                 status = currentUser.Status,
                 Birthday = currentUser.Birthday,
                 Address = currentUser.Address,
@@ -420,31 +422,20 @@ C****: Update User
             return Results.BadRequest("400|Password was not changed first time.");
         }
 
-        public async Task<IResult> DisableAccount([FromRoute] string id,
-            [FromServices] UserManager<ApplicationUser> _userManager)
-        {
-            var user = await _userManager.FindByIdAsync(id);
-    
-            if (user == null)
-            {
-                return Results.BadRequest("400|User not found");
-            }
-
-            user.Status = "Disabled";
-
-            // Remove all roles from the user
-            var roles = await _userManager.GetRolesAsync(user);
-            var removeRolesResult = await _userManager.RemoveFromRolesAsync(user, roles);
-
-            if (!removeRolesResult.Succeeded)
-            {
-                return Results.BadRequest($"500|Failed to remove roles: {string.Join(", ", removeRolesResult.Errors.Select(e => e.Description))}");
-            }
-
-            await _userManager.UpdateAsync(user);
-
-            return Results.Ok("200|User disabled successfully");
-        }
+        // public async Task<IResult> DisableAccount([FromRoute] string id,
+        //     [FromServices] UserManager<ApplicationUser> _userManager)
+        // {
+        //     var user = await _userManager.FindByIdAsync(id);
+        //
+        //     if (user == null)
+        //     {
+        //         return Results.BadRequest("400|User not found");
+        //     }
+        //
+        //     user.Status = "Disabled";
+        //
+        //     
+        // }
 
         public async Task<IResult> GetUserById([FromServices] UserManager<ApplicationUser> _userManager,
             [FromRoute] string id)
@@ -464,6 +455,9 @@ C****: Update User
                     UserName = user.UserName,
                     Email = user.Email,
                     NewEmail = user.NewEmail,
+                    IdentityCardNumber = user.IdentityCardNumber,
+                    IdentityCardDate = user.IdentityCardDate,
+                    IdentityCardPlace = user.IdentityCardPlace,
                     Gender = user.Gender,
                     CellPhone = user.PhoneNumber,
                     status = user.Status,
