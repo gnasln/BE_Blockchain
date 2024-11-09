@@ -38,7 +38,8 @@ namespace Base_BE.Endpoints
                 .RequireAuthorization("admin")
                 .MapGet(GetAllUsers, "/get-all-users")
                 // .MapPost(DisableAccount, "/disable-account/{id}")
-                .MapGet(GetUserById, "/get-user/{id}");
+                .MapGet(GetUserById, "/get-user/{id}")
+                .MapGet(SelectCandidates, "/select-candidates")
                 ;
         }
 
@@ -487,6 +488,42 @@ C****: Update User
                 }
             }
             return Results.BadRequest("400|Password is incorrect");
+        }
+
+        public async Task<IResult> SelectCandidates(
+            [FromServices] UserManager<ApplicationUser> _userManager, int page, int pageSize)
+        {
+            var usersQuery = _userManager.Users;
+
+            var usersList = await usersQuery.Where(u => u.Status == "Active").ToListAsync();
+
+            var usersDtoList = new List<UserDto>();
+
+            foreach (var user in usersList)
+            {
+                // Tạo đối tượng UserDto
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Fullname = user.FullName,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    NewEmail = user.NewEmail,
+                    IdentityCardNumber = user.IdentityCardNumber,
+                    IdentityCardDate = user.IdentityCardDate,
+                    IdentityCardPlace = user.IdentityCardPlace,
+                    Gender = user.Gender,
+                    CellPhone = user.PhoneNumber,
+                    status = user.Status,
+                    Birthday = user.Birthday,
+                    Address = user.Address,
+                    CreatedAt = user.CreateDate,
+                    Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault()
+                };
+
+                usersDtoList.Add(userDto);
+            }
+            return Results.Ok(usersDtoList);
         }
     }
 }
