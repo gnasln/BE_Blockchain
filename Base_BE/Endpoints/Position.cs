@@ -11,12 +11,13 @@ namespace Base_BE.Endpoints
         public override void Map(WebApplication app)
         {
             app.MapGroup(this)
-                .RequireAuthorization()
+                .RequireAuthorization("admin")
                 .MapPost(CreatePosition, "/create")
                 .MapPut(UpdatePosition, "/update")
                 .MapDelete(DeletePosition, "/delete/{id}")
                 .MapGet(GetAllPosition, "/view-list")
                 .MapGet(GetPositionById, "/view/{id}")
+                .MapGet(SelectPosition, "/select-position")
             ;
         }
 
@@ -70,6 +71,17 @@ namespace Base_BE.Endpoints
         public async Task<IResult> GetPositionById([FromServices] ISender sender, [FromRoute] Guid id)
         {
             var result = await sender.Send(new GetPositionByIdQuery() { Id = id });
+            return Results.Ok(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+        
+        public async Task<IResult> SelectPosition([FromServices] ISender sender, int page, int pageSize)
+        {
+            var result = await sender.Send(new SelectPositionQuery() { Page = page, PageSize = pageSize });
             return Results.Ok(new
             {
                 status = result.Status,
