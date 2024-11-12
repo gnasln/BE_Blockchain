@@ -38,29 +38,29 @@ public class Vote : EndpointGroupBase
             });
         }
 
-        var uniqueUsers = request.Voters.Union(request.Candidates).Distinct();
-
-        foreach (var userId in uniqueUsers)
+        foreach (var voter in request.Voters)
         {
-            var user = await userManager.FindByIdAsync(userId);
-            var email = user.Email ?? user.NewEmail;
-            string content;
-            
-            if (request.Voters.Contains(userId))
-            {
-                // User is only a voter
-                content = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là cử tri";
-            }
-            else
-            {
-                // User is only a candidate
-                content = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là ứng viên";
-            }
+            var user1 = await userManager.FindByIdAsync(voter);
+            var email1 = user1.Email ?? user1.NewEmail;
+            var content = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là cử tri";
 
             // Queue email sending task
             taskQueue.QueueBackgroundWorkItem(async ct =>
             {
-                await emailSender.SendEmailNotificationAsync(email, user.FullName, content, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
+                await emailSender.SendEmailNotificationAsync(email1, user1.FullName, content, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
+            });
+        }
+
+        foreach (var candidate in request.Candidates)
+        {
+            var user2 = await userManager.FindByIdAsync(candidate);
+            var email2 = user2.Email ?? user2.NewEmail;
+            var content = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là ứng viên";
+
+            // Queue email sending taskss
+            taskQueue.QueueBackgroundWorkItem(async ct =>
+            {
+                await emailSender.SendEmailNotificationAsync(email2, user2.FullName, content, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
             });
         }
 
@@ -71,7 +71,6 @@ public class Vote : EndpointGroupBase
             data = result.Data
         });
     }
-
 
     
 }
