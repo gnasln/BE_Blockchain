@@ -2,6 +2,7 @@
 {
     public class VotingReponse
     {
+        public Guid Id { get; set; }
         public required string VoteName { get; set; }
         public int MaxCandidateVote { get; set; }
         public DateTime CreateDate { get; set; }
