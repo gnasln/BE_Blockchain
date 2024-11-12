@@ -15,15 +15,15 @@ namespace Base_BE.Application.Vote.Commands
         public DateTime StartDate { get; set; }
         public DateTime ExpiredDate { get; set; }
         public Guid PositionId { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = "Active"; //default value "Active
         public required string Tenure { get; set; }
         public DateTime StartDateTenure { get; set; }
         public DateTime EndDateTenure { get; set; }
-        public string ExtraData { get; set; }
-        public List<string> Candidates { get; set; }
-        public List<string> CandidateNames { get; set; }
-        public List<string> Voters { get; set; }
-        public List<string> VoterNames { get; set; }
+        public string? ExtraData { get; set; }
+        public List<string>? Candidates { get; set; }
+        public List<string>? CandidateNames { get; set; }
+        public List<string>? Voters { get; set; }
+        public List<string>? VoterNames { get; set; }
         
         public class Mapping : Profile
         {
