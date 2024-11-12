@@ -52,5 +52,28 @@ public class EmailSender : IEmailSender
             throw new Exception($"Failed to send email: {result.ErrorMessages.FirstOrDefault()}");
         }
     }
+    
+    public async Task SendEmailNotificationAsync(string email, string fullname, string content, string voteName, string candidateNames, DateTime startDate, DateTime expiredDate)
+    {
+        var result = await _fluentEmail
+            .To(email, fullname)
+            .Subject("System Notification")
+            .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/system-notification.cshtml",
+                new 
+                { 
+                    Name = fullname, 
+                    Content = content, 
+                    VoteName = voteName, 
+                    CandidateNames = candidateNames, 
+                    StartDate = startDate, 
+                    ExpiredDate = expiredDate 
+                })
+            .SendAsync();
+
+        if (!result.Successful)
+        {
+            throw new Exception($"Failed to send email: {result.ErrorMessages.FirstOrDefault()}");
+        }
+    }
 
 }

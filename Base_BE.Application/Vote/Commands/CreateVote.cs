@@ -120,6 +120,7 @@ namespace Base_BE.Application.Vote.Commands
                     Message = new[] { "Vote created successfully" },
                     Data = result
                 };
+                
 
             }
             catch (Exception e)

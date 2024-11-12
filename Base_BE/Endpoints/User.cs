@@ -44,7 +44,7 @@ namespace Base_BE.Endpoints
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
-            UserManager<ApplicationUser> _userManager, [FromServices] EmailSender _emailSender)
+            UserManager<ApplicationUser> _userManager, [FromServices] EmailSender _emailSender, [FromServices] IBackgroundTaskQueue taskQueue)
         {
             // Kiểm tra Username
             if (string.IsNullOrEmpty(newUser.UserName))
@@ -104,8 +104,11 @@ namespace Base_BE.Endpoints
                 }
 
                 // Gửi email chứa thông tin tài khoản và khóa riêng (private key)
-                await _emailSender.SendEmailRegisterAsync(newUser.Email, newUser.FullName, newUser.UserName,
-                    passwordSeed, privateKey);
+                taskQueue.QueueBackgroundWorkItem(async ct =>
+                {
+                    await _emailSender.SendEmailRegisterAsync(newUser.Email, newUser.FullName, newUser.UserName,
+                        passwordSeed, privateKey);
+                });
 
                 return Results.Ok("200|User created successfully");
             }
@@ -525,5 +528,6 @@ C****: Update User
             }
             return Results.Ok(usersDtoList);
         }
+        
     }
 }

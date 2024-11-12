@@ -26,6 +26,10 @@ public static class DependencyInjection
         services.AddTransient<IEmailSender, EmailSender>(); // Giả định bạn có một implementation của IEmailSender
         // Register the EmailSender service
         services.AddTransient<EmailSender>();
+        // Register the BackgroundTaskQueue service
+        services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+        services.AddHostedService<QueuedHostedService>();
+
 
 		// Add FluentEmail with configuration settings
 		services
@@ -53,6 +57,12 @@ public static class DependencyInjection
                 policy.AuthenticationSchemes = [OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme];
                 policy.RequireAuthenticatedUser();
                 policy.RequireRole("Administrator");
+            })
+            .AddPolicy("user", policy =>
+            {
+                policy.AuthenticationSchemes = [OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme];
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole("User");
             });
 
         return services;
