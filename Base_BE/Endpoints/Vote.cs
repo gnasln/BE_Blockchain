@@ -22,7 +22,12 @@ public class Vote : EndpointGroupBase
             .MapGet(GetAllVote, "/View-list")
             .MapGet(GetVoteById, "/View-detail/{id}")
         ;
-        
+
+        app.MapGroup(this)
+            .RequireAuthorization()
+            .MapGet(GetAllCandidatesByVoteId, "/View-candidates/{id}")
+            ;
+
     }
 
     public async Task<IResult> CreateVote(
@@ -144,6 +149,27 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetVoteById([FromRoute] Guid id, [FromServices] ISender sender)
     {
         var result = await sender.Send(new GetVoteByIdQueries() { Id = id });
+        if (result.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+
+        return Results.Ok(new
+        {
+            status = result.Status,
+            message = result.Message,
+            data = result.Data
+        });
+    }
+    
+    public async Task<IResult> GetAllCandidatesByVoteId([FromRoute] Guid id, [FromServices] ISender sender)
+    {
+        var result = await sender.Send(new GetAllCandidatesByVoteIdQueries() { VoteId = id });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
