@@ -5,7 +5,9 @@ using Base_BE.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Client;
 using NetHelper.Common.Models;
+using IUser = Base_BE.Application.Common.Interfaces.IUser;
 
 namespace Base_BE.Endpoints;
 
@@ -20,12 +22,14 @@ public class Vote : EndpointGroupBase
             .MapPut(UpdateVote, "/update")
             .MapDelete(DeleteVote, "/delete/{id}")
             .MapGet(GetAllVote, "/View-list")
-            .MapGet(GetVoteById, "/View-detail/{id}")
+            .MapGet(GetAllVotersByVoteId, "/View-voters/{id}")
         ;
 
         app.MapGroup(this)
             .RequireAuthorization()
             .MapGet(GetAllCandidatesByVoteId, "/View-candidates/{id}")
+            .MapGet(GetAllVoteForUser, "/View-list-for-user")
+            .MapGet(GetVoteById, "/View-detail/{id}")
             ;
 
     }
@@ -170,6 +174,57 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetAllCandidatesByVoteId([FromRoute] Guid id, [FromServices] ISender sender)
     {
         var result = await sender.Send(new GetAllCandidatesByVoteIdQueries() { VoteId = id });
+        if (result.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+
+        return Results.Ok(new
+        {
+            status = result.Status,
+            message = result.Message,
+            data = result.Data
+        });
+    }
+    
+    public async Task<IResult> GetAllVoteForUser([FromServices] IUser _user, [FromServices] ISender sender)
+    {
+        if(_user == null)
+        {
+            return Results.BadRequest(new
+            {
+                status = StatusCode.UNAUTHORIZED,
+                message = "User not found"
+            });
+        }
+        
+        var result = await sender.Send(new GetAllVoteForUserQueries() { UserId = _user.Id });
+        if (result.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+
+        return Results.Ok(new
+        {
+            status = result.Status,
+            message = result.Message,
+            data = result.Data
+        });
+    }
+    
+    public async Task<IResult> GetAllVotersByVoteId([FromRoute] Guid id, [FromServices] ISender sender)
+    {
+        var result = await sender.Send(new GetAllVotersByVoteIdQueries() { VoteId = id });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
