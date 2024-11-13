@@ -19,7 +19,8 @@ public class Vote : EndpointGroupBase
             .MapPost(CreateVote, "/create")
             .MapPut(UpdateVote, "/update")
             .MapDelete(DeleteVote, "/delete/{id}")
-            .MapGet(GetAllVote, "/View-list");
+            .MapGet(GetAllVote, "/View-list")
+            .MapGet(GetVoteById, "/View-detail/{id}")
         ;
         
     }
@@ -122,6 +123,27 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetAllVote([FromServices] ISender sender)
     {
         var result = await sender.Send(new GetAllVoteQueries() { });
+        if (result.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+
+        return Results.Ok(new
+        {
+            status = result.Status,
+            message = result.Message,
+            data = result.Data
+        });
+    }
+
+    public async Task<IResult> GetVoteById([FromRoute] Guid id, [FromServices] ISender sender)
+    {
+        var result = await sender.Send(new GetVoteByIdQueries() { Id = id });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
