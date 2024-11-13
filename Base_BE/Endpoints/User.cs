@@ -19,7 +19,9 @@ namespace Base_BE.Endpoints
         public override void Map(WebApplication app)
         {
             app.MapGroup(this)
-                .MapPost(RegisterUser, "/register");
+                .MapPost(RegisterUser, "/register")
+                .MapPost(ForgotPassword, "/forgot-password")
+                ;
 
 
             app.MapGroup(this)
@@ -116,6 +118,46 @@ namespace Base_BE.Endpoints
             {
                 // Trả về lỗi nếu quá trình tạo tài khoản thất bại
                 return Results.BadRequest($"500|{string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+        
+        public async Task<IResult> ForgotPassword([FromBody] ForgotPassword forgotPassword,
+            UserManager<ApplicationUser> _userManager, [FromServices] IEmailSender _emailSender, [FromServices] IBackgroundTaskQueue taskQueue)
+        {
+            try
+            {
+                if (forgotPassword == null)
+                {
+                    return Results.BadRequest("400|Missing email address");
+                }
+
+                var user = await _userManager.FindByNameAsync(forgotPassword.UserName);
+                if (user == null)
+                {
+                    return Results.BadRequest("400|User not found");
+                }
+
+                var newPassword = GenerateSecurePassword();
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+                if (result.Succeeded)
+                {
+                    // await _emailSender.SendEmailAsync(forgotPassword.Email, user.UserName,
+                    //     $"Mật khẩu mới của bạn là: {newPassword}");
+                    taskQueue.QueueBackgroundWorkItem(async ct =>
+                    {
+                        await _emailSender.SendEmailAsync(forgotPassword.Email, user.UserName,
+                            $"Mật khẩu mới của bạn là: {newPassword}");
+                    });
+                    return Results.Ok("200|Password reset successfully");
+                }
+
+                return Results.BadRequest("400|Password reset failed");
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem("An error occurred while resetting the password.", statusCode: 500);
             }
         }
 
