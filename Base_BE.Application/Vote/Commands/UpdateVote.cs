@@ -13,15 +13,15 @@ namespace Base_BE.Application.Vote.Commands
         public required Guid Id { get; set; }
         public required string VoteName { get; set; }
         public int MaxCandidateVote { get; set; }
-        public DateTime CreateDate { get; set; }
+        public DateTime CreateDate { get; set; } = DateTime.Now;
         public DateTime StartDate { get; set; }
         public DateTime ExpiredDate { get; set; }
-        public Guid PositionId { get; set; }
+        public required Guid PositionId { get; set; }
         public string Status { get; set; }
-        public required string Tenure { get; set; }
+        public string Tenure { get; set; }
         public DateTime StartDateTenure { get; set; }
         public DateTime EndDateTenure { get; set; }
-        public string? ExtraData { get; set; }
+        public string ExtraData { get; set; }
         public List<string>? Candidates { get; set; }
         public List<string>? CandidateNames { get; set; }
         public List<string>? Voters { get; set; }
@@ -60,14 +60,14 @@ namespace Base_BE.Application.Vote.Commands
                         Message = new[] { "This Vote doesn't exist " }
                     };
 
-                // Gán các thuộc tính từ request vào entity
+                // Assign properties from request to entity
                 if (!string.IsNullOrEmpty(request.VoteName)) entity.VoteName = request.VoteName;
                 if (request.MaxCandidateVote > 0) entity.MaxCandidateVote = request.MaxCandidateVote;
                 if (request.StartDate != default) entity.StartDate = request.StartDate;
                 if (request.ExpiredDate != default) entity.ExpiredDate = request.ExpiredDate;
                 if (request.PositionId != Guid.Empty) entity.PositionId = request.PositionId;
                 if (!string.IsNullOrEmpty(request.Status)) entity.Status = request.Status;
-                if (!string.IsNullOrEmpty(request.Tenure))entity.Tenure = request.Tenure;
+                if (!string.IsNullOrEmpty(request.Tenure)) entity.Tenure = request.Tenure;
                 if (request.StartDateTenure != default) entity.StartDateTenure = request.StartDateTenure;
                 if (request.EndDateTenure != default) entity.EndDateTenure = request.EndDateTenure;
                 if (!string.IsNullOrEmpty(request.ExtraData)) entity.ExtraData = request.ExtraData;
@@ -110,6 +110,7 @@ namespace Base_BE.Application.Vote.Commands
                     await _context.UserVotes.AddRangeAsync(newVoters, cancellationToken);
                 }
 
+                _context.Votes.Update(entity);
                 await _context.SaveChangesAsync(cancellationToken);
 
                 var result = _mapper.Map<VotingReponse>(entity);
@@ -120,8 +121,8 @@ namespace Base_BE.Application.Vote.Commands
 
                 return new ResultCustom<VotingReponse>()
                 {
-                    Status = StatusCode.CREATED,
-                    Message = new[] { "Vote created successfully" },
+                    Status = StatusCode.OK,
+                    Message = new[] { "Vote updated successfully" },
                     Data = result
                 };
 
