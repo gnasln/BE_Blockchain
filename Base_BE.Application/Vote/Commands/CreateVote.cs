@@ -15,7 +15,7 @@ namespace Base_BE.Application.Vote.Commands
         public DateTime StartDate { get; set; }
         public DateTime ExpiredDate { get; set; }
         public Guid PositionId { get; set; }
-        public string Status { get; set; } = "Active"; //default value "Active
+        public string? Status { get; set; }
         public required string Tenure { get; set; }
         public DateTime StartDateTenure { get; set; }
         public DateTime EndDateTenure { get; set; }
