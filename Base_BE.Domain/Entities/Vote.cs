@@ -21,14 +21,14 @@ public class Vote
     public Position Position { get; set; }
     
     [MaxLength(50)]
-    public string Status { get; set; }
+    public string? Status { get; set; }
     
     [MaxLength(50)]
     public required string Tenure { get; set; }
     
     public DateTime StartDateTenure { get; set; }
     public DateTime EndDateTenure { get; set; }
-    public string ExtraData { get; set; }
+    public string? ExtraData { get; set; }
     
     public ICollection<UserVote> UserVotes { get; set; }
 }
