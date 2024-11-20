@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Base_BE.Dtos;
 using System.Configuration;
+using Base_BE.Helper.Services;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -29,6 +30,8 @@ public static class DependencyInjection
         // Register the BackgroundTaskQueue service
         services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
         services.AddHostedService<QueuedHostedService>();
+        //ket noi hop dong thong minh
+        services.AddSingleton<SmartContractService>();
 
 
 		// Add FluentEmail with configuration settings

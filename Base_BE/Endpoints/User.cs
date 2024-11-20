@@ -11,6 +11,7 @@ using Base_BE.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using NetHelper.Common.Models;
 using Microsoft.EntityFrameworkCore;
+using Base_BE.Helper.key;
 
 namespace Base_BE.Endpoints
 {
@@ -68,9 +69,14 @@ namespace Base_BE.Endpoints
             }
 
             // Tạo cặp khóa RSA
-            using var rsa = new RSACryptoServiceProvider(1024);
-            var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
-            var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
+            //using var rsa = new RSACryptoServiceProvider(2048);
+            //var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
+            //var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
+
+            var privateKey = RandomPrivateKeyGenerator.GetRandomPrivateKey();
+            var keyPair = RandomPrivateKeyGenerator.GenerateKeyPair(privateKey);
+
+
 
             // Tạo đối tượng ApplicationUser
             var newUserEntity = new ApplicationUser
@@ -87,7 +93,7 @@ namespace Base_BE.Endpoints
                 IdentityCardPlace = newUser.IdentityCardPlace,
                 ImageUrl = newUser.ImageUrl,
                 IdentityCardImage = newUser.UrlIdentityCardImage,
-                PublicKey = publicKey
+                PublicKey = keyPair["publicKey"]
             };
 
             // Tạo mật khẩu mặc định dựa trên ngày sinh hoặc giá trị mặc định nếu không có ngày sinh
@@ -109,7 +115,7 @@ namespace Base_BE.Endpoints
                 taskQueue.QueueBackgroundWorkItem(async ct =>
                 {
                     await _emailSender.SendEmailRegisterAsync(newUser.Email, newUser.FullName, newUser.UserName,
-                        passwordSeed, privateKey);
+                        passwordSeed, keyPair["privateKey"]);
                 });
 
                 return Results.Ok("200|User created successfully");

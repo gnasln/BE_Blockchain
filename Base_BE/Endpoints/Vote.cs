@@ -1,12 +1,22 @@
-﻿using Base_BE.Application.Vote.Commands;
+﻿using Base_BE.Application.Common.Interfaces;
+using Base_BE.Application.Vote.Commands;
 using Base_BE.Application.Vote.Queries;
 using Base_BE.Domain.Entities;
+using Base_BE.Dtos;
+using Base_BE.Helper;
+using Base_BE.Helper.key;
+using Base_BE.Helper.Services;
 using Base_BE.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using NetHelper.Common.Models;
+using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Signer;
+using ServiceStack;
+using System.Security.Cryptography;
+using System.Text.Json;
 using IUser = Base_BE.Application.Common.Interfaces.IUser;
 
 namespace Base_BE.Endpoints;
@@ -30,6 +40,7 @@ public class Vote : EndpointGroupBase
             .MapGet(GetAllCandidatesByVoteId, "/View-candidates/{id}")
             .MapGet(GetAllVoteForUser, "/View-list-for-user")
             .MapGet(GetVoteById, "/View-detail/{id}")
+            .MapPost(SubmitVote, "/submit-vote")
             ;
 
     }
@@ -243,4 +254,105 @@ public class Vote : EndpointGroupBase
         });
     }
 
+    public async Task<IResult> SubmitVote([FromBody] EncryptData encryptData, [FromServices] ISender sender, SmartContractService smartContractService, IUser user, UserManager<ApplicationUser> userManager, IApplicationDbContext dbContext)
+    {
+        //giai ma
+        string rawData = RsaUtil.Decrypt(encryptData.EncruptData, Constant.PRIVATE_KEY);
+        var request = JsonSerializer.Deserialize<SubmitVoteModel>(rawData);
+
+        //check validate
+        //if (!await smartContractService.CheckExistBallotAsync(request.VoterId, request.VoteId))
+        //{
+        //    throw new BadHttpRequestException("Bạn đã bỏ phiếu cho cuộc bầu cử này, không thể bầu cử thêm");
+        //}
+
+
+        // Kiểm tra private key
+        await CheckPrivateKey(request!.PrivateKey, user, userManager);
+
+        string privateKey = RandomPrivateKeyGenerator.GetRandomPrivateKey();
+        Ether ether = EtherService.GenerateAddress(privateKey);
+
+        SubmitVoteModel submitVoteModel = new SubmitVoteModel
+        {
+            BitcoinAddress = ether.Address,
+            Candidates = request!.Candidates,
+            VoterId = user.Id!,
+            VoteId = request.VoteId,
+            VotedTime = DateTime.UtcNow,
+            PrivateKey = request.PrivateKey
+        };
+
+        Console.WriteLine("Voter {} submitted a vote " + user.UserName);
+
+        var result = await smartContractService.SubmitVoteAsync(submitVoteModel);
+
+        if (result == null)
+        {
+            return Results.BadRequest(new
+            {
+                status = StatusCode.INTERNALSERVERERROR,
+                message = "Error submitting vote"
+            });
+        }
+
+        var ballotVoter = new CreateBallotVoterCommand
+        {
+            VoterId = Guid.Parse(submitVoteModel.VoteId),
+            CandidateIds = submitVoteModel.Candidates.Select(Guid.Parse).ToList(),
+            VotedTime = submitVoteModel.VotedTime,
+            Address = submitVoteModel.BitcoinAddress,
+            VoteId = Guid.Parse(submitVoteModel.VoteId),
+            BallotTransaction = result.TransactionHash
+        };
+
+        var ballotRes = await sender.Send(ballotVoter);
+        if(ballotRes.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = ballotRes.Status,
+                message = ballotRes.Message
+            });
+        }
+
+        return Results.Ok(new
+        {
+            status = result.Status,
+            message = "success",
+            data = result
+        });
+    }
+
+    private async Task<bool> CheckPrivateKey(string privateKey, IUser user, [FromServices] UserManager<ApplicationUser> userManager)
+    {
+        // Retrieve the current user from UserManager
+        var currentUser = await userManager.FindByIdAsync(user.Id!);
+        if (currentUser == null)
+        {
+            throw new UnauthorizedAccessException("User not authenticated.");
+        }
+
+        if (string.IsNullOrWhiteSpace(currentUser.PublicKey))
+        {
+            throw new InvalidOperationException("The user does not have a valid public key.");
+        }
+
+        try
+        {
+            // Sinh địa chỉ Ether từ private key
+            var ether = EtherService.GenerateAddress(privateKey);
+
+            // So sánh public key sinh ra với public key của người dùng
+            return ether.PublicKey.Equals(currentUser.PublicKey, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (FormatException ex)
+        {
+            throw new ArgumentException("The provided private key is not in a valid Base64 format.", ex);
+        }
+        catch (CryptographicException ex)
+        {
+            throw new InvalidOperationException("Failed to process the private key. Ensure it is valid and properly formatted.", ex);
+        }
+    }
 }

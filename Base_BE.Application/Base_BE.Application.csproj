@@ -12,6 +12,7 @@
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.1" />
 		<PackageReference Include="MediatR" Version="12.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+		<PackageReference Include="Nethereum.Web3" Version="4.26.0" />
 		<PackageReference Include="Npgsql" Version="8.0.3" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
 	</ItemGroup>
@@ -19,6 +20,10 @@
 	<ItemGroup>
 		<ProjectReference Include="..\NetHelper\NetHelper.csproj" />
 		<ProjectReference Include="..\Base_BE.Domain\Base_BE.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="UserVoter\Queries\" />
 	</ItemGroup>
 
 </Project>
