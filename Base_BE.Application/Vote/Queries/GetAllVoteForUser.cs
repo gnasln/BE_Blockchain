@@ -31,8 +31,8 @@ namespace Base_BE.Application.Vote.Queries
                 var entities = await (from vote in _context.Votes
                         join userVote in _context.UserVotes on vote.Id equals userVote.VoteId into voteGroup
                         from userVote in voteGroup.DefaultIfEmpty()
-                        where userVote.UserId == request.UserId
-                        select vote)
+                        where userVote.UserId == request.UserId && userVote.Role == "Voter"
+                                      select vote)
                     .ToListAsync(cancellationToken);
 
                 var result = _mapper.Map<List<VotingReponse>>(entities);
