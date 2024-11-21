@@ -182,9 +182,20 @@ public class Vote : EndpointGroupBase
         });
     }
     
-    public async Task<IResult> GetAllCandidatesByVoteId([FromRoute] Guid id, [FromServices] ISender sender)
+    public async Task<IResult> GetAllCandidatesByVoteId([FromRoute] Guid id, [FromServices] ISender sender, [FromServices] SmartContractService smartContractService)
     {
         var result = await sender.Send(new GetAllCandidatesByVoteIdQueries() { VoteId = id });
+        var listCandidate = new List<CandidateDto>();
+        foreach (var item in result.Data)
+        {
+            var candidate = new CandidateDto
+            {
+                Id = item.Id,
+                FullName = item.Fullname,
+                TotalBallot = await smartContractService.CountBallotForCandidateAsync(item.Id!, id.ToString())
+            };
+            listCandidate.Add(candidate);
+        }
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
@@ -199,7 +210,7 @@ public class Vote : EndpointGroupBase
         {
             status = result.Status,
             message = result.Message,
-            data = result.Data
+            data = listCandidate
         });
     }
     
@@ -266,7 +277,6 @@ public class Vote : EndpointGroupBase
         {
             throw new BadHttpRequestException("Bạn đã bỏ phiếu cho cuộc bầu cử này, không thể bầu cử thêm");
         }
-
 
         // Kiểm tra private key
         await CheckPrivateKey(request!.PrivateKey, user, userManager);
