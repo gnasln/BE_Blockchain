@@ -261,10 +261,10 @@ public class Vote : EndpointGroupBase
         var request = JsonSerializer.Deserialize<SubmitVoteModel>(rawData);
 
         //check validate
-        //if (!await smartContractService.CheckExistBallotAsync(request.VoterId, request.VoteId))
-        //{
-        //    throw new BadHttpRequestException("Bạn đã bỏ phiếu cho cuộc bầu cử này, không thể bầu cử thêm");
-        //}
+        if (!await smartContractService.CheckExistBallotAsync(request.VoterId, request.VoteId))
+        {
+            throw new BadHttpRequestException("Bạn đã bỏ phiếu cho cuộc bầu cử này, không thể bầu cử thêm");
+        }
 
 
         // Kiểm tra private key

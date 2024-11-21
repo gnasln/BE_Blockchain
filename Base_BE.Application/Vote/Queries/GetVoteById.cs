@@ -1,7 +1,9 @@
 using AutoMapper;
 using Base_BE.Application.Common.Interfaces;
 using Base_BE.Application.Dtos;
+using Base_BE.Domain.Entities;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NetHelper.Common.Models;
 
@@ -15,11 +17,13 @@ public class GetVoteByIdQueriesHandler : IRequestHandler<GetVoteByIdQueries, Res
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper; 
+    private readonly UserManager<ApplicationUser> _user;
 
-    public GetVoteByIdQueriesHandler(IApplicationDbContext context, IMapper mapper)
+    public GetVoteByIdQueriesHandler(IApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> user)
     {
         _context = context;
         _mapper = mapper;
+        _user = user;
     }
 
     public async Task<ResultCustom<VotingReponse>> Handle(GetVoteByIdQueries request, CancellationToken cancellationToken)
@@ -36,11 +40,45 @@ public class GetVoteByIdQueriesHandler : IRequestHandler<GetVoteByIdQueries, Res
                 };
             }
             var result = _mapper.Map<VotingReponse>(entity);
-            var userCandidates = await _context.UserVotes.Where(x => x.VoteId == request.Id && x.Role == "Candidate").ToListAsync();
-            var userVoters = await _context.UserVotes.Where(x => x.VoteId == request.Id && x.Role == "Voter").ToListAsync();
-            
-            result.Candidates = userCandidates.Select(x => x.UserId).ToList();
-            result.Voters = userVoters.Select(x => x.UserId).ToList();
+            // Lấy danh sách các UserId của Candidates
+            var candidateIds = await _context.UserVotes
+                .Where(x => x.VoteId == request.Id && x.Role == "Candidate")
+                .Select(x => x.UserId)
+                .ToListAsync();
+
+            // Lấy danh sách tên của Candidates
+            var candidateNames = new List<string>();
+            foreach (var candidateId in candidateIds)
+            {
+                var candidate = await _user.FindByIdAsync(candidateId);
+                if (candidate != null)
+                {
+                    candidateNames.Add(candidate.FullName);
+                }
+            }
+
+            // Lấy danh sách các UserId của Voters
+            var voterIds = await _context.UserVotes
+                .Where(x => x.VoteId == request.Id && x.Role == "Voter")
+                .Select(x => x.UserId)
+                .ToListAsync();
+
+            // Lấy danh sách tên của Voters
+            var voterNames = new List<string>();
+            foreach (var voterId in voterIds)
+            {
+                var voter = await _user.FindByIdAsync(voterId);
+                if (voter != null)
+                {
+                    voterNames.Add(voter.FullName);
+                }
+            }
+
+
+            result.Candidates = candidateIds;
+            result.CandidateNames = candidateNames;
+            result.Voters = voterIds;
+            result.VoterNames = voterNames;
 
             return new ResultCustom<VotingReponse>
             {

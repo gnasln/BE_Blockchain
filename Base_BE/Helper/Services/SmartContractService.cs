@@ -21,8 +21,6 @@ namespace Base_BE.Helper.Services
         private readonly Web3 _web3;
         private readonly string contractAddress;
         private readonly ILogger<SmartContractService> _logger;
-        private readonly ApplicationDbContext context;
-        private readonly IUser user;
 
         public SmartContractService(IConfiguration configuration, ILogger<SmartContractService> logger)
         {
