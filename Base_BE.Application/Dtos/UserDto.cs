@@ -12,6 +12,7 @@ public class UserDto
     public DateTime? Birthday { get; set; }
     public string? Address { get; set; }
     public string? status { get; set; }
+    public bool? Status { get; set; }
     public string? Role { get; set; }
     public DateTime? CreatedAt { get; set; }
     public string? ImageUrl { get; set; }

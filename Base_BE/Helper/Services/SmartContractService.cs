@@ -12,6 +12,7 @@ using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
+using BallotVoterDto = Base_BE.Dtos.BallotVoterDto;
 using TransactionReceipt = Nethereum.RPC.Eth.DTOs.TransactionReceipt;
 
 namespace Base_BE.Helper.Services
@@ -97,24 +98,45 @@ namespace Base_BE.Helper.Services
             }
         }
 
-        //public async Task<BallotVoterDto> GetBallotVoterAsync(string address)
-        //{
+        public async Task<BallotVoterDto> GetBallotVoterAsync(string address)
+        {
+            try 
+            {
+                // Lấy hợp đồng từ hàm GetContract
+                var contract = GetContract();
+                var function = contract.GetFunction("getBallotVoterData");
 
-        //    var contract = GetContract();
-        //    var function = contract.GetFunction("getBallotVoterData");
+                // Gọi hàm getBallotVoterData từ hợp đồng
+                var result = await function.CallAsync<Tuple<
+                    BigInteger,        // Id
+                    List<string>,      // CandidateIds
+                    string,            // VoterId
+                    string,            // VoteId
+                    string,            // VotedTime
+                    string             // BitcoinAddress
+                >>(address);
 
-        //    var result = await function.CallDecodingToDefaultAsync(address);
+                // Trả về DTO chứa dữ liệu đã xử lý
+                return new BallotVoterDto
+                {
+                    Id = result.Item1.ToString(),
+                    CandidateIds = result.Item2,
+                    VoterId = result.Item3,
+                    VoteId = result.Item4,
+                    VotedTime = DateTime.TryParse(result.Item5, out var votedTime)
+                        ? votedTime
+                        : default,
+                    BitcoinAddress = result.Item6
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error fetching ballot data for voter address: {address}");
+                throw;
+            }
+        }
 
-        //    return new BallotVoterDto
-        //    {
-        //        Id = ((BigInteger)result[0]).ToString(),
-        //        Candidates = (List<string>)result[1],
-        //        VoterId = result[2].ToString(),
-        //        VoteId = result[3].ToString(),
-        //        VotedTime = DateTime.Parse(result[4].ToString()),
-        //        Address = result[5].ToString()
-        //    };
-        //}
+
 
         public async Task<bool> CheckExistBallotAsync(string voteId, string voterId)
         {

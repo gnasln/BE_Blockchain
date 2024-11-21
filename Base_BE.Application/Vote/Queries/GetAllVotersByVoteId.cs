@@ -41,7 +41,16 @@ public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersBy
                 select new { uv, user })
             .ToListAsync(cancellationToken);
 
-        var voterDtos = _mapper.Map<List<UserDto>>(voters.Select(x => x.user));
+        var voterDtos = voters.Select(v => new UserDto
+        {
+            Id = v.user.Id,
+            Fullname = v.user.FullName,
+            Email = v.user.Email,
+            NewEmail = v.user.NewEmail,
+            CellPhone = v.user.CellPhone,
+            Birthday = v.user.Birthday,
+            Status = v.uv.Status
+        }).ToList();
         
         return new ResultCustom<List<UserDto>>
         {

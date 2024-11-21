@@ -250,27 +250,6 @@ public class Vote : EndpointGroupBase
             data = result.Data
         });
     }
-    
-    public async Task<IResult> GetAllVotersByVoteId([FromRoute] Guid id, [FromServices] ISender sender)
-    {
-        var result = await sender.Send(new GetAllVotersByVoteIdQueries() { VoteId = id });
-        if (result.Status == StatusCode.INTERNALSERVERERROR)
-        {
-            return Results.BadRequest(new
-            {
-                status = result.Status,
-                message = result.Message,
-                data = result.Data
-            });
-        }
-
-        return Results.Ok(new
-        {
-            status = result.Status,
-            message = result.Message,
-            data = result.Data
-        });
-    }
 
     public async Task<IResult> SubmitVote([FromBody] EncryptData encryptData, [FromServices] ISender sender, SmartContractService smartContractService, IUser user, UserManager<ApplicationUser> userManager, IApplicationDbContext dbContext)
     {
@@ -373,4 +352,55 @@ public class Vote : EndpointGroupBase
             throw new InvalidOperationException("Failed to process the private key. Ensure it is valid and properly formatted.", ex);
         }
     }
+    
+    public async Task<IResult> GetAllVotersByVoteId([FromRoute] Guid id, [FromServices] ISender sender, [FromServices] SmartContractService smartContractService)
+    {
+        var result = await sender.Send(new GetAllVotersByVoteIdQueries() { VoteId = id });
+        var listVoters = new List<VoterDto>();
+        foreach (var item in result.Data)
+        {
+            var voter = new VoterDto()
+            {
+                Fullname = item.Fullname,
+                Email = item.Email,
+                NewEmail = item.NewEmail,
+                CellPhone = item.CellPhone,
+                Birthday = item.Birthday,
+                Status = item.Status,
+            };
+            listVoters.Add(voter);
+        }
+        if (result.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+
+        return Results.Ok(new
+        {
+            status = result.Status,
+            message = result.Message,
+            data = listVoters
+        });
+    }
+    
+    // public async Task<IResult> GetBallotVoteFromUser([FromServices] IUser _user, [FromServices] ISender sender, [FromServices] SmartContractService smartContractService)
+    // {
+    //     var address = 
+    //     
+    //     var result = await smartContractService.GetBallotVoterAsync(address);
+    //     if (result == null)
+    //     {
+    //         return Results.BadRequest(new
+    //         {
+    //             status = StatusCode.INTERNALSERVERERROR,
+    //             message = "Error fetching ballot data"
+    //         });
+    //     }
+    //     
+    // }
 }
