@@ -15,4 +15,5 @@ public class UserDto
     public string? Role { get; set; }
     public DateTime? CreatedAt { get; set; }
     public string? ImageUrl { get; set; }
+    public string? IdentityCardImage { get; set; }
 }

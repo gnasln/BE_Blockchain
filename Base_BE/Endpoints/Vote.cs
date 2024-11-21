@@ -197,6 +197,8 @@ public class Vote : EndpointGroupBase
                 NewEmail = item.NewEmail,
                 CellPhone = item.CellPhone,
                 Birthday = item.Birthday,
+                ImageUrl = item.ImageUrl,
+                IdentityCardImage = item.IdentityCardImage,
                 TotalBallot = await smartContractService.CountBallotForCandidateAsync(item.Id!, id.ToString())
             };
             listCandidate.Add(candidate);

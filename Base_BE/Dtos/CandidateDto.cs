@@ -9,5 +9,7 @@ public class CandidateDto
     public string? NewEmail { get; set; }
     public string? CellPhone { get; set; }
     public DateTime? Birthday { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? IdentityCardImage { get; set; }
     public int? TotalBallot { get; set; } = 0;
 }

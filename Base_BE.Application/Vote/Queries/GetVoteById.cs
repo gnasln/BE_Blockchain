@@ -30,7 +30,7 @@ public class GetVoteByIdQueriesHandler : IRequestHandler<GetVoteByIdQueries, Res
     {
         try
         {
-            var entity = await _context.Votes.FindAsync(request.Id);
+            var entity = await _context.Votes.FindAsync(request.Id, cancellationToken);
             if (entity == null)
             {
                 return new ResultCustom<VotingReponse>
@@ -79,6 +79,8 @@ public class GetVoteByIdQueriesHandler : IRequestHandler<GetVoteByIdQueries, Res
             result.CandidateNames = candidateNames;
             result.Voters = voterIds;
             result.VoterNames = voterNames;
+            result.TotalVoter = voterIds.Count;
+            result.TotalCandidate = candidateIds.Count;
 
             return new ResultCustom<VotingReponse>
             {

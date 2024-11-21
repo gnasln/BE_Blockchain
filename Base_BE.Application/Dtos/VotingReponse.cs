@@ -18,5 +18,7 @@
         public List<string> CandidateNames { get; set; }
         public List<string> Voters { get; set; }
         public List<string> VoterNames { get; set; }
+        public int? TotalVoter { get; set; }
+        public int? TotalCandidate { get; set; }
     }
 }

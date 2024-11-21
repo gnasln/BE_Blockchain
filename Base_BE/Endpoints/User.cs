@@ -402,6 +402,9 @@ C****: Update User
                     Birthday = u.Birthday,
                     Address = u.Address,
                     CreatedAt = u.CreateDate,
+                    Role = (await _userManager.GetRolesAsync(u)).FirstOrDefault(),
+                    ImageUrl = u.ImageUrl,
+                    IdentityCardImage = u.IdentityCardImage
                 };
 
                 usersDtoList.Add(userDto);
@@ -449,7 +452,9 @@ C****: Update User
                 Birthday = currentUser.Birthday,
                 Address = currentUser.Address,
                 CreatedAt = currentUser.CreateDate,
-                Role = (await _userManager.GetRolesAsync(currentUser)).FirstOrDefault()
+                Role = (await _userManager.GetRolesAsync(currentUser)).FirstOrDefault(),
+                ImageUrl = currentUser.ImageUrl,
+                IdentityCardImage = currentUser.IdentityCardImage
                 
             };
 
@@ -516,7 +521,9 @@ C****: Update User
                     Birthday = user.Birthday,
                     Address = user.Address,
                     CreatedAt = user.CreateDate,
-                    Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault()
+                    Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault(),
+                    ImageUrl = user.ImageUrl,
+                    IdentityCardImage = user.IdentityCardImage
                 };
                 return Results.Ok(result);
             }
@@ -569,7 +576,9 @@ C****: Update User
                     Birthday = user.Birthday,
                     Address = user.Address,
                     CreatedAt = user.CreateDate,
-                    Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault()
+                    Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault(),
+                    ImageUrl = user.ImageUrl,
+                    IdentityCardImage = user.IdentityCardImage
                 };
 
                 usersDtoList.Add(userDto);
