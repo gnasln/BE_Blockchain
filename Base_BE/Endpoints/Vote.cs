@@ -192,6 +192,11 @@ public class Vote : EndpointGroupBase
             {
                 Id = item.Id,
                 FullName = item.Fullname,
+                UserName = item.UserName,
+                Email = item.Email,
+                NewEmail = item.NewEmail,
+                CellPhone = item.CellPhone,
+                Birthday = item.Birthday,
                 TotalBallot = await smartContractService.CountBallotForCandidateAsync(item.Id!, id.ToString())
             };
             listCandidate.Add(candidate);
