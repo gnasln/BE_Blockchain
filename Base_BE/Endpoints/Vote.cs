@@ -262,7 +262,7 @@ public class Vote : EndpointGroupBase
 
         //check validate
         var checkExistVote = await smartContractService.CheckExistBallotAsync(user.Id!, request.VoteId!);
-        if (!checkExistVote)
+        if (checkExistVote)
         {
             throw new BadHttpRequestException("Bạn đã bỏ phiếu cho cuộc bầu cử này, không thể bầu cử thêm");
         }

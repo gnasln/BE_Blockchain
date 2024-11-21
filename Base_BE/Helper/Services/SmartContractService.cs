@@ -6,6 +6,7 @@ using Base_BE.Dtos;
 using Base_BE.Endpoints;
 using Base_BE.Helper.key;
 using Base_BE.Infrastructure.Data;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.EntityFrameworkCore;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
@@ -35,7 +36,7 @@ namespace Base_BE.Helper.Services
             _web3 = new Web3(credentials, rpcUrl);
         }
 
-        private Contract GetContract(string contractAddress)
+        private Contract GetContract()
         {
             // Replace with your smart contract ABI
             string abi = "[\n\t{\n\t\t\"inputs\": [],\n\t\t\"stateMutability\": \"nonpayable\",\n\t\t\"type\": \"constructor\"\n\t},\n\t{\n\t\t\"anonymous\": false,\n\t\t\"inputs\": [\n\t\t\t{\n\t\t\t\t\"indexed\": true,\n\t\t\t\t\"internalType\": \"address\",\n\t\t\t\t\"name\": \"voterAddress\",\n\t\t\t\t\"type\": \"address\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"indexed\": true,\n\t\t\t\t\"internalType\": \"uint256\",\n\t\t\t\t\"name\": \"ballotId\",\n\t\t\t\t\"type\": \"uint256\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"indexed\": false,\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"voteId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"indexed\": false,\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"voterId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t],\n\t\t\"name\": \"BallotSubmitted\",\n\t\t\"type\": \"event\"\n\t},\n\t{\n\t\t\"inputs\": [\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"bitcoinAddress\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string[]\",\n\t\t\t\t\"name\": \"candidates\",\n\t\t\t\t\"type\": \"string[]\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"voterId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"voteId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"votedTime\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t],\n\t\t\"name\": \"giveVotingRight\",\n\t\t\"outputs\": [],\n\t\t\"stateMutability\": \"nonpayable\",\n\t\t\"type\": \"function\"\n\t},\n\t{\n\t\t\"inputs\": [\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"voteId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"voterId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t],\n\t\t\"name\": \"checkExistBallot\",\n\t\t\"outputs\": [\n\t\t\t{\n\t\t\t\t\"internalType\": \"bool\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"bool\"\n\t\t\t}\n\t\t],\n\t\t\"stateMutability\": \"view\",\n\t\t\"type\": \"function\"\n\t},\n\t{\n\t\t\"inputs\": [\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"candidateId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"voteId\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t],\n\t\t\"name\": \"countBallotForCandidate\",\n\t\t\"outputs\": [\n\t\t\t{\n\t\t\t\t\"internalType\": \"uint256\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"uint256\"\n\t\t\t}\n\t\t],\n\t\t\"stateMutability\": \"view\",\n\t\t\"type\": \"function\"\n\t},\n\t{\n\t\t\"inputs\": [\n\t\t\t{\n\t\t\t\t\"internalType\": \"address\",\n\t\t\t\t\"name\": \"voterAddress\",\n\t\t\t\t\"type\": \"address\"\n\t\t\t}\n\t\t],\n\t\t\"name\": \"getBallotVoterData\",\n\t\t\"outputs\": [\n\t\t\t{\n\t\t\t\t\"internalType\": \"uint256\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"uint256\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string[]\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"string[]\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"internalType\": \"string\",\n\t\t\t\t\"name\": \"\",\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t],\n\t\t\"stateMutability\": \"view\",\n\t\t\"type\": \"function\"\n\t}\n]";
@@ -46,7 +47,7 @@ namespace Base_BE.Helper.Services
         {
             try
             {
-                var contract = GetContract(model.BitcoinAddress);
+                var contract = GetContract();
                 var giveVotingRightFunction = contract.GetFunction("giveVotingRight");
 
                 _logger.LogInformation($"Submitting vote for VoterId={model.VoterId}, VoteId={model.VoteId}");
@@ -81,7 +82,7 @@ namespace Base_BE.Helper.Services
         {
             try
             {
-                var contract = GetContract(contractAddress);
+                var contract = GetContract();
                 var function = contract.GetFunction("countBallotForCandidate");
 
                 _logger.LogInformation($"Counting ballots for CandidateId={candidateId}, VoteId={voteId}");
@@ -98,38 +99,28 @@ namespace Base_BE.Helper.Services
 
         //public async Task<BallotVoterDto> GetBallotVoterAsync(string address)
         //{
-        //    try
+
+        //    var contract = GetContract();
+        //    var function = contract.GetFunction("getBallotVoterData");
+
+        //    var result = await function.CallDecodingToDefaultAsync(address);
+
+        //    return new BallotVoterDto
         //    {
-        //        var contract = GetContract(address);
-        //        var function = contract.GetFunction("getBallotVoterData");
-
-        //        _logger.LogInformation($"Fetching ballot voter data for Address={address}");
-
-        //        var result = await function.CallDeserializingToObjectAsync<BallotVoterDto>(address);
-
-
-        //        return new BallotVoterDto
-        //        {
-        //            Id = (long)result.Item1,
-        //            CandidateIds = result.Item2,
-        //            VoterId = long.Parse(result.Item3),
-        //            VotedTime = DateTime.Parse(result.Item4),
-        //            VoteId = long.Parse(result.Item5),
-        //            Address = result.Item6
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error fetching ballot voter data");
-        //        throw;
-        //    }
+        //        Id = ((BigInteger)result[0]).ToString(),
+        //        Candidates = (List<string>)result[1],
+        //        VoterId = result[2].ToString(),
+        //        VoteId = result[3].ToString(),
+        //        VotedTime = DateTime.Parse(result[4].ToString()),
+        //        Address = result[5].ToString()
+        //    };
         //}
 
         public async Task<bool> CheckExistBallotAsync(string voteId, string voterId)
         {
             try
             {
-                var contract = GetContract(contractAddress);
+                var contract = GetContract();
                 var function = contract.GetFunction("checkExistBallot");
 
                 _logger.LogInformation($"Checking if ballot exists for VoteId={voteId}, VoterId={voterId}");
