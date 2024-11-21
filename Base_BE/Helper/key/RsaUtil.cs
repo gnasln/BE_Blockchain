@@ -66,7 +66,7 @@
         {
             using (var rsa = RSA.Create())
             {
-                rsa.KeySize = 2048;
+                rsa.KeySize = 4096;
                 var keyPair = new Dictionary<string, string>
                 {
                     ["publicKey"] = Convert.ToBase64String(rsa.ExportRSAPublicKey()),
