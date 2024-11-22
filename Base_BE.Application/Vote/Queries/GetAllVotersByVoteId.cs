@@ -8,7 +8,7 @@ using NetHelper.Common.Models;
 
 namespace Base_BE.Application.Vote.Queries;
 
-public class GetAllVotersByVoteIdQueries : IRequest<ResultCustom<List<UserDto>>>
+public class GetAllVotersByVoteIdQueries : IRequest<ResultCustom<List<VoterDto>>>
 {
     public Guid VoteId { get; set; }
     
@@ -21,7 +21,7 @@ public class GetAllVotersByVoteIdQueries : IRequest<ResultCustom<List<UserDto>>>
     }
 }
 
-public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersByVoteIdQueries, ResultCustom<List<UserDto>>>
+public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersByVoteIdQueries, ResultCustom<List<VoterDto>>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
@@ -32,7 +32,7 @@ public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersBy
         _mapper = mapper;
     }
     
-    public async Task<ResultCustom<List<UserDto>>> Handle(GetAllVotersByVoteIdQueries request, CancellationToken cancellationToken)
+    public async Task<ResultCustom<List<VoterDto>>> Handle(GetAllVotersByVoteIdQueries request, CancellationToken cancellationToken)
     {
         var voters = await (from uv in _context.UserVotes
                 join au in _context.ApplicationUsers on uv.UserId equals au.Id into userGroup
@@ -41,9 +41,8 @@ public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersBy
                 select new { uv, user })
             .ToListAsync(cancellationToken);
 
-        var voterDtos = voters.Select(v => new UserDto
+        var voterDtos = voters.Select(v => new VoterDto
         {
-            Id = v.user.Id,
             Fullname = v.user.FullName,
             Email = v.user.Email,
             NewEmail = v.user.NewEmail,
@@ -52,7 +51,7 @@ public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersBy
             Status = v.uv.Status
         }).ToList();
         
-        return new ResultCustom<List<UserDto>>
+        return new ResultCustom<List<VoterDto>>
         {
             Status = StatusCode.OK,
             Message = new[] { "Get all candidates successfully" },

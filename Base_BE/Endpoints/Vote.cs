@@ -191,7 +191,7 @@ public class Vote : EndpointGroupBase
             var candidate = new CandidateDto
             {
                 Id = item.Id,
-                FullName = item.Fullname,
+                FullName = item.FullName,
                 UserName = item.UserName,
                 Email = item.Email,
                 NewEmail = item.NewEmail,

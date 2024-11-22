@@ -25,6 +25,5 @@ namespace Base_BE.Domain.Entities
 		public string? IdentityCardPlace { get; set; }
         public string? PublicKey { get; set; }
 
-
     }
 }
