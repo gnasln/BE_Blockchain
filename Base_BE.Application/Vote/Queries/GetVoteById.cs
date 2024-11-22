@@ -1,6 +1,7 @@
 using AutoMapper;
 using Base_BE.Application.Common.Interfaces;
 using Base_BE.Application.Dtos;
+using Base_BE.Application.Position.Queries;
 using Base_BE.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -39,6 +40,8 @@ public class GetVoteByIdQueriesHandler : IRequestHandler<GetVoteByIdQueries, Res
                     Message = new[] { "Vote not found" }
                 };
             }
+
+
             var result = _mapper.Map<VotingReponse>(entity);
             // Lấy danh sách các UserId của Candidates
             var candidateIds = await _context.UserVotes
@@ -74,7 +77,7 @@ public class GetVoteByIdQueriesHandler : IRequestHandler<GetVoteByIdQueries, Res
                 }
             }
 
-
+            result.PositionName = (await _context.Positions.FindAsync(result.PositionId, cancellationToken)).PositionName;
             result.Candidates = candidateIds;
             result.CandidateNames = candidateNames;
             result.Voters = voterIds;

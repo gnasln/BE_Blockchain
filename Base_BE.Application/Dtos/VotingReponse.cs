@@ -9,6 +9,7 @@
         public DateTime StartDate { get; set; }
         public DateTime ExpiredDate { get; set; }
         public Guid PositionId { get; set; }
+        public string PositionName { get; set; }
         public string Status { get; set; }
         public required string Tenure { get; set; }
         public DateTime StartDateTenure { get; set; }
