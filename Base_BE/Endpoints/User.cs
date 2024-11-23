@@ -35,13 +35,14 @@ namespace Base_BE.Endpoints
                 .MapGet(GetCurrentUser, "/UserInfo")
                 .MapGet(CheckPasswordFirstTime, "/check-password-first-time")
                 .MapPost(CheckPasswork, "/check-password")
+                .MapGet(GetUserById, "/get-user/{id}")
             ;
 
             app.MapGroup(this)
                 .RequireAuthorization("admin")
                 .MapGet(GetAllUsers, "/get-all-users")
                 // .MapPost(DisableAccount, "/disable-account/{id}")
-                .MapGet(GetUserById, "/get-user/{id}")
+                //.MapGet(GetUserById, "/get-user/{id}")
                 .MapGet(SelectCandidates, "/select-candidates")
                 ;
         }
