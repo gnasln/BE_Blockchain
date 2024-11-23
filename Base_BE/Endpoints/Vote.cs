@@ -6,15 +6,18 @@ using Base_BE.Dtos;
 using Base_BE.Helper;
 using Base_BE.Helper.key;
 using Base_BE.Helper.Services;
+using Base_BE.Infrastructure.Data;
 using Base_BE.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using NetHelper.Common.Models;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using ServiceStack;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using IUser = Base_BE.Application.Common.Interfaces.IUser;
@@ -221,10 +224,14 @@ public class Vote : EndpointGroupBase
             data = listCandidate
         });
     }
-    
-    public async Task<IResult> GetAllVoteForUser([FromServices] IUser _user, [FromServices] ISender sender)
+
+    public async Task<IResult> GetAllVoteForUser(
+    [FromServices] IUser _user,
+    [FromServices] ISender sender,
+    [FromServices] SmartContractService smartContractService,
+    ApplicationDbContext dbContext)
     {
-        if(_user == null)
+        if (_user == null)
         {
             return Results.BadRequest(new
             {
@@ -232,8 +239,8 @@ public class Vote : EndpointGroupBase
                 message = "User not found"
             });
         }
-        
-        var result = await sender.Send(new GetAllVoteForUserQueries() { UserId = _user.Id });
+
+        var result = await sender.Send(new GetAllVoteForUserQueries { UserId = _user.Id });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
@@ -244,13 +251,39 @@ public class Vote : EndpointGroupBase
             });
         }
 
-        return Results.Ok(new
+        try
         {
-            status = result.Status,
-            message = result.Message,
-            data = result.Data
-        });
+            var userId = Guid.Parse(_user.Id); // Ensure type safety
+            var voteIds = result.Data?.Select(v => v.Id).ToList();
+
+            var candidateData = await (from uv in dbContext.UserVotes
+                                       join bv in dbContext.BallotVoters on uv.BallotAddress equals bv.Address
+                                       join au in dbContext.ApplicationUsers on bv.CandidateId.ToString() equals au.Id
+                                       where uv.UserId == _user.Id && voteIds.Contains(uv.VoteId) && bv.VoterId == userId
+                                       select new { uv.VoteId, au.FullName }).ToListAsync();
+
+            var groupedCandidates = candidateData
+                .GroupBy(cd => cd.VoteId)
+                .ToDictionary(g => g.Key, g => g.Select(c => c.FullName).ToList());
+
+            result.Data?.ForEach(vote =>
+            {
+                vote.SelectedCandidates = groupedCandidates.GetValueOrDefault(vote.Id, new List<string>());
+            });
+
+            return Results.Ok(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem("An error occurred while processing the request", ex.Message);
+        }
     }
+
 
     public async Task<IResult> SubmitVote([FromBody] EncryptData encryptData, [FromServices] ISender sender, SmartContractService smartContractService, IUser user, UserManager<ApplicationUser> userManager, IApplicationDbContext dbContext)
     {
@@ -296,7 +329,7 @@ public class Vote : EndpointGroupBase
 
         var ballotVoter = new CreateBallotVoterCommand
         {
-            VoterId = Guid.Parse(submitVoteModel.VoteId),
+            VoterId = Guid.Parse(submitVoteModel.VoterId),
             CandidateIds = submitVoteModel.Candidates.Select(Guid.Parse).ToList(),
             VotedTime = submitVoteModel.VotedTime,
             Address = submitVoteModel.BitcoinAddress,
