@@ -1,10 +1,14 @@
 using System.Configuration;
+using Base_BE.Domain.Entities;
+using System.Security.Claims;
 using Base_BE.Infrastructure.Data;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Formatting.Json;
+using Newtonsoft.Json;
 
 // log
 var logger = Log.Logger = new LoggerConfiguration()
@@ -94,6 +98,7 @@ app.UseRouting();
 app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
 app.UseAuthentication();
+app.UseMiddleware<AccountDisabledMiddleware>();
 app.UseAuthorization();
 
 app.UseStaticFiles();
@@ -101,3 +106,67 @@ app.MapControllers();
 app.MapEndpoints();
 
 await app.RunAsync();
+
+public class AccountDisabledMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public AccountDisabledMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task Invoke(HttpContext context, UserManager<ApplicationUser> userManager)
+    {
+        if (context.User.Identity?.IsAuthenticated == true)
+        {
+            try
+            {
+                var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("User is not authenticated or ID is missing.");
+                    return;
+                }
+
+                var user = await userManager.FindByIdAsync(userId);
+
+                if (user == null)
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    await context.Response.WriteAsync("User not found.");
+                    return;
+                }
+
+                if (user.Status?.ToLower() == "disable")
+                {
+                    context.Response.ContentType = "application/json";
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        status = StatusCodes.Status403Forbidden,
+                        message = "Your account has been disabled."
+                    }));
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+                {
+                    status = StatusCodes.Status500InternalServerError,
+                    message = $"An error occurred: {ex.Message}"
+                }));
+                return;
+            }
+        }
+
+        await _next(context);
+    }
+}
+
+

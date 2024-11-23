@@ -308,6 +308,18 @@ public class AuthorizationController(
                         }));
                 }
 
+                //kiểm tra vô hiệu hóa
+                if (user.Status?.ToLower() == "disable")
+                {
+                    return Forbid(
+                        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                        properties: new AuthenticationProperties(new Dictionary<string, string?>
+                        {
+                            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user account has been disabled."
+                        }));
+                }
+
                 // Xác thực mật khẩu của người dùng
                 var passwordCheckResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: false);
                 if (!passwordCheckResult.Succeeded)
@@ -320,6 +332,7 @@ public class AuthorizationController(
                             [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The password is incorrect."
                         }));
                 }
+                
             }
             else if (result is not null && result.Principal is not null)
             {
@@ -327,6 +340,16 @@ public class AuthorizationController(
                 if (t != null)
                 {
                     user = await _userManager.FindByIdAsync(t);
+                }
+                if (user.Status?.ToLower() == "disable")
+                {
+                    return Forbid(
+                        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                        properties: new AuthenticationProperties(new Dictionary<string, string?>
+                        {
+                            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user account has been disabled."
+                        }));
                 }
             }
             /*C***** end */
@@ -351,6 +374,17 @@ public class AuthorizationController(
                     {
                         [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
                         [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user is no longer allowed to sign in."
+                    }));
+            }
+
+            if (user.Status?.ToLower() == "disable")
+            {
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string?>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user account has been disabled."
                     }));
             }
 
@@ -419,4 +453,21 @@ public class AuthorizationController(
                 yield break;
         }
     }
+    [Authorize(Policy = "admin")]
+    [HttpPost("~/admin/disable-account/{id}")]
+    public async Task<IActionResult> DisableAccount([FromRoute] string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null)
+            return NotFound("User not found.");
+
+        user.Status = "Disable";
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok("User account has been disabled.");
+    }
+
 }

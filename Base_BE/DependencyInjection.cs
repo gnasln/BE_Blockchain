@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Base_BE.Dtos;
 using System.Configuration;
 using Base_BE.Helper.Services;
+using Base_BE.Domain.Entities;
+using Base_BE.Helper;
+using Microsoft.AspNetCore.Identity;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -33,10 +36,13 @@ public static class DependencyInjection
         //ket noi hop dong thong minh
         services.AddSingleton<SmartContractService>();
 
+        //vo hieu hoa
+        services.AddScoped<SignInManager<ApplicationUser>, CustomSignInManager>();
 
-		// Add FluentEmail with configuration settings
-		services
-			.AddFluentEmail("lengocsang2k4@gmail.com")
+
+        // Add FluentEmail with configuration settings
+        services
+            .AddFluentEmail("lengocsang2k4@gmail.com")
 			.AddRazorRenderer()
 			.AddSmtpSender("smtp.gmail.com", 587, "lengocsang2k4@gmail.com", "wmak huen cqwi puei");
 
@@ -60,12 +66,6 @@ public static class DependencyInjection
                 policy.AuthenticationSchemes = [OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme];
                 policy.RequireAuthenticatedUser();
                 policy.RequireRole("Administrator");
-            })
-            .AddPolicy("user", policy =>
-            {
-                policy.AuthenticationSchemes = [OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme];
-                policy.RequireAuthenticatedUser();
-                policy.RequireRole("User");
             });
 
         return services;
