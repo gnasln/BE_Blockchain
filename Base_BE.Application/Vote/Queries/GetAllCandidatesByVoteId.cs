@@ -48,6 +48,7 @@ public class GetAllCandidatesByIdQueriesHandler : IRequestHandler<GetAllCandidat
             Email = x.user.Email,
             Birthday = x.user.Birthday,
             CellPhone = x.user.CellPhone,
+            Address = x.user.Address,
             FullName = x.user.FullName,
             ImageUrl = x.user.ImageUrl,
             NewEmail = x.user.NewEmail,

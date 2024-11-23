@@ -32,12 +32,12 @@ public class Vote : EndpointGroupBase
             .MapPut(UpdateVote, "/update")
             .MapDelete(DeleteVote, "/delete/{id}")
             .MapGet(GetAllVote, "/View-list")
-            .MapGet(GetAllVotersByVoteId, "/View-voters/{id}")
         ;
 
         app.MapGroup(this)
             .RequireAuthorization()
             .MapGet(GetAllCandidatesByVoteId, "/View-candidates/{id}")
+            .MapGet(GetAllVotersByVoteId, "/View-voters/{id}")
             .MapGet(GetAllVoteForUser, "/View-list-for-user")
             .MapGet(GetVoteById, "/View-detail/{id}")
             .MapPost(SubmitVote, "/submit-vote")
@@ -195,6 +195,7 @@ public class Vote : EndpointGroupBase
                 UserName = item.UserName,
                 Email = item.Email,
                 NewEmail = item.NewEmail,
+                Address = item.Address,
                 CellPhone = item.CellPhone,
                 Birthday = item.Birthday,
                 ImageUrl = item.ImageUrl,
@@ -364,6 +365,7 @@ public class Vote : EndpointGroupBase
                 Fullname = item.Fullname,
                 Email = item.Email,
                 NewEmail = item.NewEmail,
+                Address = item.Address,
                 CellPhone = item.CellPhone,
                 Birthday = item.Birthday,
                 Status = item.Status,
