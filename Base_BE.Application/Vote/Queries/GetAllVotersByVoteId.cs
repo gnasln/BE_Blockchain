@@ -24,12 +24,10 @@ public class GetAllVotersByVoteIdQueries : IRequest<ResultCustom<List<VoterDto>>
 public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersByVoteIdQueries, ResultCustom<List<VoterDto>>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly IMapper _mapper;
     
-    public GetAllVotersByVoteIdQueriesHandler(IApplicationDbContext context, IMapper mapper)
+    public GetAllVotersByVoteIdQueriesHandler(IApplicationDbContext context)
     {
         _context = context;
-        _mapper = mapper;
     }
     
     public async Task<ResultCustom<List<VoterDto>>> Handle(GetAllVotersByVoteIdQueries request, CancellationToken cancellationToken)

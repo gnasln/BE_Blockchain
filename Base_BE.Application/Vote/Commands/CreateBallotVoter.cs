@@ -33,7 +33,7 @@ public class CreateBallotVoterCommandHandler : IRequestHandler<CreateBallotVoter
     }
     public async Task<ResultCustom<BallotVoterDto>> Handle(CreateBallotVoterCommand request, CancellationToken cancellationToken)
     {
-        var vote = await _context.Votes.FindAsync(request.VoterId, cancellationToken);
+        var vote = await _context.Votes.FirstOrDefaultAsync(v => v.Id == request.VoteId, cancellationToken);
         if (vote == null) 
         {
             return new ResultCustom<BallotVoterDto>()
