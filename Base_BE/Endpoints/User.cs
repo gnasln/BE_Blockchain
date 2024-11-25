@@ -69,11 +69,7 @@ namespace Base_BE.Endpoints
                 return Results.BadRequest("501|User already exists");
             }
 
-            // Tạo cặp khóa RSA
-            //using var rsa = new RSACryptoServiceProvider(2048);
-            //var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
-            //var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
-
+            // Tạo cặp khóa 
             var privateKey = RandomPrivateKeyGenerator.GetRandomPrivateKey();
             var keyPair = RandomPrivateKeyGenerator.GenerateKeyPair(privateKey);
 

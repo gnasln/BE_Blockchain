@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
+using ServiceStack;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Base_BE.Endpoints;
@@ -455,11 +457,30 @@ public class AuthorizationController(
     }
     [Authorize(Policy = "admin")]
     [HttpPost("~/admin/disable-account/{id}")]
-    public async Task<IActionResult> DisableAccount([FromRoute] string id)
+    public async Task<IActionResult> DisableAccount([FromRoute] string id, [FromServices] ApplicationDbContext dbContext)
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user == null)
             return NotFound("User not found.");
+
+        var listVote = await dbContext.UserVotes.Where(x => x.UserId == id).Select(x => x.VoteId).ToListAsync();
+        if (listVote.IsNullOrEmpty())
+        {
+            return BadRequest("User has voted in an active vote, cannot disable account.");
+        }
+
+        bool res = false;
+        foreach (var item in listVote)
+        {
+            var vote = await dbContext.Votes.FindAsync(item);
+            if(vote.Status == "1")
+            {
+                res = true;
+                break;
+            }
+        }
+
+        if (res) return BadRequest("User has voted in an active vote, cannot disable account.");
 
         user.Status = "Disable";
         var result = await _userManager.UpdateAsync(user);
