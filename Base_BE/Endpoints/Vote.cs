@@ -20,6 +20,7 @@ using ServiceStack;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Threading;
 using IUser = Base_BE.Application.Common.Interfaces.IUser;
 
 namespace Base_BE.Endpoints;
@@ -44,6 +45,8 @@ public class Vote : EndpointGroupBase
             .MapGet(GetAllVoteForUser, "/View-list-for-user")
             .MapGet(GetVoteById, "/View-detail/{id}")
             .MapPost(SubmitVote, "/submit-vote")
+            .MapGet(GetHistoryVote, "/History-vote")
+            .MapGet(GetAllVoteForCandidate, "/View-list-for-candidate")
             ;
 
     }
@@ -228,7 +231,6 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetAllVoteForUser(
     [FromServices] IUser _user,
     [FromServices] ISender sender,
-    [FromServices] SmartContractService smartContractService,
     ApplicationDbContext dbContext)
     {
         if (_user == null)
@@ -240,7 +242,7 @@ public class Vote : EndpointGroupBase
             });
         }
 
-        var result = await sender.Send(new GetAllVoteForUserQueries { UserId = _user.Id });
+        var result = await sender.Send(new GetAllVoteForUserQueries { UserId = _user.Id! });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
@@ -253,7 +255,114 @@ public class Vote : EndpointGroupBase
 
         try
         {
-            var userId = Guid.Parse(_user.Id); // Ensure type safety
+            var userId = Guid.Parse(_user.Id!); // Ensure type safety
+            var voteIds = result.Data?.Select(v => v.Id).ToList();
+
+            var candidateData = await (from uv in dbContext.UserVotes
+                                       join bv in dbContext.BallotVoters on uv.BallotAddress equals bv.Address
+                                       join au in dbContext.ApplicationUsers on bv.CandidateId.ToString() equals au.Id
+                                       where uv.UserId == _user.Id && voteIds.Contains(uv.VoteId) && bv.VoterId == userId
+                                       select new { uv.VoteId, au.FullName }).ToListAsync();
+
+            var groupedCandidates = candidateData
+                .GroupBy(cd => cd.VoteId)
+                .ToDictionary(g => g.Key, g => g.Select(c => c.FullName).ToList());
+
+            result.Data?.ForEach( vote =>
+            {
+                vote.SelectedCandidates = groupedCandidates.GetValueOrDefault(vote.Id, new List<string>());
+                vote.PositionName = ( dbContext.Positions.FirstOrDefault(x => x.Id == vote.PositionId))!.PositionName;
+            });
+
+            
+
+            return Results.Ok(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem("An error occurred while processing the request", ex.Message);
+        }
+    }
+
+    public async Task<IResult> GetAllVoteForCandidate(
+    [FromServices] IUser _user,
+    [FromServices] ISender sender,
+    ApplicationDbContext dbContext)
+    {
+        if (_user == null)
+        {
+            return Results.BadRequest(new
+            {
+                status = StatusCode.UNAUTHORIZED,
+                message = "User not found"
+            });
+        }
+
+        var result = await sender.Send(new GetAllVoteForCandidateQueries { UserId = _user.Id! });
+        if (result.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+
+        try
+        {
+            result.Data?.ForEach(vote =>
+            {
+                vote.PositionName = (dbContext.Positions.FirstOrDefault(x => x.Id == vote.PositionId))!.PositionName;
+            });
+
+
+
+            return Results.Ok(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem("An error occurred while processing the request", ex.Message);
+        }
+    }
+
+    public async Task<IResult> GetHistoryVote(
+    [FromServices] IUser _user,
+    [FromServices] ISender sender,
+    ApplicationDbContext dbContext)
+    {
+        if (_user == null)
+        {
+            return Results.BadRequest(new
+            {
+                status = StatusCode.UNAUTHORIZED,
+                message = "User not found"
+            });
+        }
+
+        var result = await sender.Send(new GetHistoryVoteQueries { UserId = _user.Id! });
+        if (result.Status == StatusCode.INTERNALSERVERERROR)
+        {
+            return Results.BadRequest(new
+            {
+                status = result.Status,
+                message = result.Message
+            });
+        }
+
+        try
+        {
+            var userId = Guid.Parse(_user.Id!); // Ensure type safety
             var voteIds = result.Data?.Select(v => v.Id).ToList();
 
             var candidateData = await (from uv in dbContext.UserVotes
@@ -269,6 +378,7 @@ public class Vote : EndpointGroupBase
             result.Data?.ForEach(vote =>
             {
                 vote.SelectedCandidates = groupedCandidates.GetValueOrDefault(vote.Id, new List<string>());
+                vote.PositionName = (dbContext.Positions.FirstOrDefault(x => x.Id == vote.PositionId))!.PositionName;
             });
 
             return Results.Ok(new
