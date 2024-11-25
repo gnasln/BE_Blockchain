@@ -473,7 +473,7 @@ public class AuthorizationController(
         foreach (var item in listVote)
         {
             var vote = await dbContext.Votes.FindAsync(item);
-            if(vote.Status == "1")
+            if(vote?.Status == "1")
             {
                 res = true;
                 break;
@@ -489,6 +489,24 @@ public class AuthorizationController(
             return BadRequest(result.Errors);
 
         return Ok("User account has been disabled.");
+    }
+
+    [Authorize(Policy = "admin")]
+    [HttpPost("~/admin/active-account/{id}")]
+    public async Task<IActionResult> ActiveAccount([FromRoute] string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null)
+            return NotFound("User not found.");
+
+        user.Status = "Active";
+        var result = await _userManager.UpdateAsync(user);
+
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok("User account has been Active successfully.");
     }
 
 }
