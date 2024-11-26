@@ -147,7 +147,7 @@ public class Vote : EndpointGroupBase
         });
     }
 
-    public async Task<IResult> GetAllVote([FromServices] ISender sender)
+    public async Task<IResult> GetAllVote([FromServices] ISender sender, [FromServices] ApplicationDbContext dbContext)
     {
         var result = await sender.Send(new GetAllVoteQueries() { });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
@@ -160,12 +160,24 @@ public class Vote : EndpointGroupBase
             });
         }
 
-        return Results.Ok(new
+        try
         {
-            status = result.Status,
-            message = result.Message,
-            data = result.Data
-        });
+            result.Data?.ForEach(vote =>
+            {
+                vote.PositionName = (dbContext.Positions.FirstOrDefault(x => x.Id == vote.PositionId))!.PositionName;
+            });
+
+            return Results.Ok(new
+            {
+                status = result.Status,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem("An error occurred while processing the request", ex.Message);
+        }
     }
 
     public async Task<IResult> GetVoteById([FromRoute] Guid id, [FromServices] ISender sender)
