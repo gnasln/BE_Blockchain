@@ -367,20 +367,21 @@ public class Vote : EndpointGroupBase
             var userId = Guid.Parse(_user.Id!); // Ensure type safety
             var voteIds = result.Data?.Select(v => v.Id).ToList();
 
-            //var candidateData = await (from uv in dbContext.UserVotes
-            //                           join bv in dbContext.BallotVoters on uv.BallotAddress equals bv.Address
-            //                           join au in dbContext.ApplicationUsers on bv.CandidateId.ToString() equals au.Id
-            //                           where uv.UserId == _user.Id && voteIds.Contains(uv.VoteId) && bv.VoterId == userId
-            //                           select new { uv.VoteId, au.FullName, uv.UserId }).ToListAsync();
+            var candidateData = await (from uv in dbContext.UserVotes
+                                       join bv in dbContext.BallotVoters on uv.BallotAddress equals bv.Address
+                                       join au in dbContext.ApplicationUsers on bv.CandidateId.ToString() equals au.Id
+                                       where uv.UserId == _user.Id && voteIds.Contains(uv.VoteId) && bv.VoterId == userId
+                                       select new { uv.VoteId, au.FullName }).ToListAsync();
 
-            //var groupedCandidates = candidateData
-            //.GroupBy(cd => cd.VoteId)
-            //.ToDictionary(g => g.Key, g => new
-            //{
-            //    CandidateIds = g.Select(c => c.CandidateId).Distinct().ToList(),
-            //    VoterIds = g.Select(c => c.VoterId).Distinct().ToList(),
-            //    CandidateNames = g.Select(c => c.FullName).ToList()
-            //});
+            var groupedCandidates = candidateData
+                .GroupBy(cd => cd.VoteId)
+                .ToDictionary(g => g.Key, g => g.Select(c => c.FullName).ToList());
+
+            result.Data?.ForEach(vote =>
+            {
+                vote.SelectedCandidates = groupedCandidates.GetValueOrDefault(vote.Id, new List<string>());
+                vote.PositionName = (dbContext.Positions.FirstOrDefault(x => x.Id == vote.PositionId))!.PositionName;
+            });
 
             // Add the counts of candidates and voters
             var roleCounts = await (from uv in dbContext.UserVotes
