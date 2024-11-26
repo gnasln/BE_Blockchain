@@ -22,5 +22,6 @@
         public int? TotalVoter { get; set; }
         public int? TotalCandidate { get; set; }
         public List<string> SelectedCandidates { get; set; }
+        public string? RoleUser { get; set; }
     }
 }

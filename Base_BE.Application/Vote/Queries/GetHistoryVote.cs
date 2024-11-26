@@ -31,11 +31,31 @@ namespace Base_BE.Application.Vote.Queries
                 var entities = await (from vote in _context.Votes
                                       join userVote in _context.UserVotes on vote.Id equals userVote.VoteId into voteGroup
                                       from userVote in voteGroup.DefaultIfEmpty()
-                                      where userVote.UserId == request.UserId && (userVote.Role == "Voter" || userVote.Role == "Candidate")
-                                      select vote)
+                                      where userVote != null && userVote.UserId == request.UserId && (userVote.Role == "Voter" || userVote.Role == "Candidate")
+                                      select new
+                                      {
+                                          vote,
+                                          Role = userVote.Role
+                                      })
                     .ToListAsync(cancellationToken);
 
-                var result = _mapper.Map<List<VotingReponse>>(entities);
+                var result = entities.Select(e => new VotingReponse
+                {
+                    Id = e.vote.Id,
+                    VoteName = e.vote.VoteName,
+                    RoleUser = e.Role,
+                    PositionId = e.vote.PositionId,
+                    PositionName = e.vote.Position?.PositionName,
+                    Status = e.vote.Status,
+                    StartDate = e.vote.StartDate,
+                    ExpiredDate = e.vote.ExpiredDate,
+                    MaxCandidateVote = e.vote.MaxCandidateVote,
+                    Tenure = e.vote.Tenure,
+                    StartDateTenure = e.vote.StartDateTenure,
+                    EndDateTenure = e.vote.EndDateTenure,
+                    ExtraData = e.vote.ExtraData,
+                    CreateDate = e.vote.CreateDate
+                }).ToList();
 
                 return new ResultCustom<List<VotingReponse>>
                 {
@@ -54,4 +74,5 @@ namespace Base_BE.Application.Vote.Queries
             }
         }
     }
+
 }

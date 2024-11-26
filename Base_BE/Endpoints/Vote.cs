@@ -1,4 +1,5 @@
 ﻿using Base_BE.Application.Common.Interfaces;
+using Base_BE.Application.Dtos;
 using Base_BE.Application.Vote.Commands;
 using Base_BE.Application.Vote.Queries;
 using Base_BE.Domain.Entities;
@@ -191,10 +192,10 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetAllCandidatesByVoteId([FromRoute] Guid id, [FromServices] ISender sender, [FromServices] SmartContractService smartContractService)
     {
         var result = await sender.Send(new GetAllCandidatesByVoteIdQueries() { VoteId = id });
-        var listCandidate = new List<CandidateDto>();
+        var listCandidate = new List<Base_BE.Dtos.CandidateDto>();
         foreach (var item in result.Data)
         {
-            var candidate = new CandidateDto
+            var candidate = new Base_BE.Dtos.CandidateDto
             {
                 Id = item.Id,
                 FullName = item.FullName,
@@ -339,7 +340,8 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetHistoryVote(
     [FromServices] IUser _user,
     [FromServices] ISender sender,
-    ApplicationDbContext dbContext)
+    ApplicationDbContext dbContext,
+    int page, int pageSize)
     {
         if (_user == null)
         {
@@ -365,27 +367,59 @@ public class Vote : EndpointGroupBase
             var userId = Guid.Parse(_user.Id!); // Ensure type safety
             var voteIds = result.Data?.Select(v => v.Id).ToList();
 
-            var candidateData = await (from uv in dbContext.UserVotes
-                                       join bv in dbContext.BallotVoters on uv.BallotAddress equals bv.Address
-                                       join au in dbContext.ApplicationUsers on bv.CandidateId.ToString() equals au.Id
-                                       where uv.UserId == _user.Id && voteIds.Contains(uv.VoteId) && bv.VoterId == userId
-                                       select new { uv.VoteId, au.FullName }).ToListAsync();
+            //var candidateData = await (from uv in dbContext.UserVotes
+            //                           join bv in dbContext.BallotVoters on uv.BallotAddress equals bv.Address
+            //                           join au in dbContext.ApplicationUsers on bv.CandidateId.ToString() equals au.Id
+            //                           where uv.UserId == _user.Id && voteIds.Contains(uv.VoteId) && bv.VoterId == userId
+            //                           select new { uv.VoteId, au.FullName, uv.UserId }).ToListAsync();
 
-            var groupedCandidates = candidateData
-                .GroupBy(cd => cd.VoteId)
-                .ToDictionary(g => g.Key, g => g.Select(c => c.FullName).ToList());
+            //var groupedCandidates = candidateData
+            //.GroupBy(cd => cd.VoteId)
+            //.ToDictionary(g => g.Key, g => new
+            //{
+            //    CandidateIds = g.Select(c => c.CandidateId).Distinct().ToList(),
+            //    VoterIds = g.Select(c => c.VoterId).Distinct().ToList(),
+            //    CandidateNames = g.Select(c => c.FullName).ToList()
+            //});
+
+            // Add the counts of candidates and voters
+            var roleCounts = await (from uv in dbContext.UserVotes
+                                    where voteIds.Contains(uv.VoteId)
+                                    group uv by uv.VoteId into g
+                                    select new
+                                    {
+                                        VoteId = g.Key,
+                                        CandidateCount = g.Count(uv => uv.Role == "Candidate"),
+                                        VoterCount = g.Count(uv => uv.Role == "Voter")
+                                    }).ToListAsync();
+
+            var roleCountsDict = roleCounts.ToDictionary(rc => rc.VoteId, rc => new { rc.CandidateCount, rc.VoterCount });
 
             result.Data?.ForEach(vote =>
             {
-                vote.SelectedCandidates = groupedCandidates.GetValueOrDefault(vote.Id, new List<string>());
-                vote.PositionName = (dbContext.Positions.FirstOrDefault(x => x.Id == vote.PositionId))!.PositionName;
+                var counts = roleCountsDict.GetValueOrDefault(vote.Id, new { CandidateCount = 0, VoterCount = 0 });
+                vote.TotalCandidate = counts.CandidateCount;
+                vote.TotalVoter = counts.VoterCount;
             });
+
+            var sortedData = result.Data?.OrderByDescending(v => v.StartDate).ToList();
+            // Áp dụng phân trang
+            var paginatedVotes = sortedData.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var res = new ResultCustomPaginate<List<VotingReponse>>
+            {
+                Data = paginatedVotes,
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalItems = paginatedVotes.Count,
+                TotalPages = (int)Math.Ceiling((double)paginatedVotes.Count / pageSize)
+            };
 
             return Results.Ok(new
             {
                 status = result.Status,
                 message = result.Message,
-                data = result.Data
+                data = res
             });
         }
         catch (Exception ex)
@@ -497,13 +531,13 @@ public class Vote : EndpointGroupBase
         }
     }
     
-    public async Task<IResult> GetAllVotersByVoteId([FromRoute] Guid id, [FromServices] ISender sender, [FromServices] SmartContractService smartContractService)
+    public async Task<IResult> GetAllVotersByVoteId([FromRoute] Guid id, [FromServices] ISender sender)
     {
         var result = await sender.Send(new GetAllVotersByVoteIdQueries() { VoteId = id });
-        var listVoters = new List<VoterDto>();
+        var listVoters = new List<Base_BE.Dtos.VoterDto>();
         foreach (var item in result.Data)
         {
-            var voter = new VoterDto()
+            var voter = new Base_BE.Dtos.VoterDto()
             {
                 Fullname = item.Fullname,
                 Email = item.Email,
@@ -533,19 +567,4 @@ public class Vote : EndpointGroupBase
         });
     }
     
-    // public async Task<IResult> GetBallotVoteFromUser([FromServices] IUser _user, [FromServices] ISender sender, [FromServices] SmartContractService smartContractService)
-    // {
-    //     var address = 
-    //     
-    //     var result = await smartContractService.GetBallotVoterAsync(address);
-    //     if (result == null)
-    //     {
-    //         return Results.BadRequest(new
-    //         {
-    //             status = StatusCode.INTERNALSERVERERROR,
-    //             message = "Error fetching ballot data"
-    //         });
-    //     }
-    //     
-    // }
 }
