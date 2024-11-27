@@ -464,7 +464,7 @@ public class AuthorizationController(
             return NotFound("User not found.");
 
         var listVote = await dbContext.UserVotes.Where(x => x.UserId == id).Select(x => x.VoteId).ToListAsync();
-        if (listVote.IsNullOrEmpty())
+        if (!listVote.IsNullOrEmpty())
         {
             return BadRequest("User has voted in an active vote, cannot disable account.");
         }
