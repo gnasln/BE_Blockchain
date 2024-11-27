@@ -457,16 +457,24 @@ public class AuthorizationController(
     }
     [Authorize(Policy = "admin")]
     [HttpPost("~/admin/disable-account/{id}")]
-    public async Task<IActionResult> DisableAccount([FromRoute] string id, [FromServices] ApplicationDbContext dbContext)
+    public async Task<IResult> DisableAccount([FromRoute] string id, [FromServices] ApplicationDbContext dbContext)
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user == null)
-            return NotFound("User not found.");
+            return Results.NotFound(new
+            {
+                status = 404,
+                message = "User has voted in an active vote, cannot disable account."
+            });
 
         var listVote = await dbContext.UserVotes.Where(x => x.UserId == id).Select(x => x.VoteId).ToListAsync();
         if (!listVote.IsNullOrEmpty())
         {
-            return BadRequest("User has voted in an active vote, cannot disable account.");
+            return Results.BadRequest(new
+            {
+                status = 404,
+                message = "User has voted in an active vote, cannot disable account."
+            });
         }
 
         bool res = false;
@@ -480,33 +488,60 @@ public class AuthorizationController(
             }
         }
 
-        if (res) return BadRequest("User has voted in an active vote, cannot disable account.");
+        if (res) 
+        {
+            return Results.BadRequest(new
+            {
+                status = 404,
+                message = "User has voted in an active vote, cannot disable account."
+            });
+        } 
 
         user.Status = "Disable";
         var result = await _userManager.UpdateAsync(user);
 
         if (!result.Succeeded)
-            return BadRequest(result.Errors);
+            return Results.BadRequest(new
+            {
+                status = 404,
+                message = "User has voted in an active vote, cannot disable account."
+            });
 
-        return Ok("User account has been disabled.");
+        return Results.Ok(new
+        {
+            status = result.Succeeded,
+            message = "Disable user successfully"
+        });
     }
 
     [Authorize(Policy = "admin")]
     [HttpPost("~/admin/active-account/{id}")]
-    public async Task<IActionResult> ActiveAccount([FromRoute] string id)
+    public async Task<IResult> ActiveAccount([FromRoute] string id)
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user == null)
-            return NotFound("User not found.");
+            return Results.NotFound(new
+            {
+                status = 404,
+                message = "User has voted in an active vote, cannot disable account."
+            });
 
         user.Status = "Active";
         var result = await _userManager.UpdateAsync(user);
 
 
         if (!result.Succeeded)
-            return BadRequest(result.Errors);
+            return Results.BadRequest(new
+            {
+                status = 404,
+                message = "User has voted in an active vote, cannot disable account."
+            });
 
-        return Ok("User account has been Active successfully.");
+        return Results.Ok(new
+        {
+            status = result.Succeeded,
+            message = "User account has been Active successfully."
+        });
     }
 
 }
