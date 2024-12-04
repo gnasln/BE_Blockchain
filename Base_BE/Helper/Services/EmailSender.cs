@@ -1,7 +1,8 @@
 ﻿using System.Net;
 using System.Net.Mail;
+using Base_BE.Domain.Entities;
 using FluentEmail.Core;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using Base_BE.Helper.Services;
 
 namespace Base_BE.Services;
 
@@ -10,8 +11,9 @@ public class EmailSender : IEmailSender
     private readonly SmtpClient _client;
     private readonly string _fromAddress;
     private readonly IFluentEmail _fluentEmail;
+    private readonly IFluentEmailFactory _fluentEmailFactory;
 
-    public EmailSender(IConfiguration configuration, IFluentEmail fluentEmail)
+    public EmailSender(IConfiguration configuration, IFluentEmail fluentEmail, IFluentEmailFactory fluentEmailFactory)
     {
         _client = new SmtpClient(configuration["EmailSettings:Host"])
         {
@@ -21,6 +23,7 @@ public class EmailSender : IEmailSender
         };
         _fromAddress = configuration["EmailSettings:FromAddress"];
         _fluentEmail = fluentEmail;
+        _fluentEmailFactory = fluentEmailFactory;
     }
 
     public async Task SendEmailAsync(string email, string name, string otp)
@@ -53,26 +56,57 @@ public class EmailSender : IEmailSender
         }
     }
     
-    public async Task SendEmailNotificationAsync(string email, string fullname, string content, string voteName, string candidateNames, DateTime startDate, DateTime expiredDate)
+    public async Task SendEmailNotificationAsync(List<ApplicationUser> users, string content, string voteName, string candidateNames, DateTime startDate, DateTime expiredDate)
     {
-        var result = await _fluentEmail
-            .To(email, fullname)
-            .Subject("System Notification")
-            .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/system-notification.cshtml",
-                new 
-                { 
-                    Name = fullname, 
-                    Content = content, 
-                    VoteName = voteName, 
-                    CandidateNames = candidateNames, 
-                    StartDate = startDate, 
-                    ExpiredDate = expiredDate 
-                })
-            .SendAsync();
-
-        if (!result.Successful)
+        foreach (var user in users)
         {
-            throw new Exception($"Failed to send email: {result.ErrorMessages.FirstOrDefault()}");
+            var result = await _fluentEmailFactory
+                .Create()
+                .To(user.Email ?? user.NewEmail, user.FullName)
+                .Subject("System Notification")
+                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/system-notification.cshtml",
+                    new 
+                    { 
+                        Name = user.FullName, 
+                        Content = content, 
+                        VoteName = voteName, 
+                        CandidateNames = candidateNames, 
+                        StartDate = startDate, 
+                        ExpiredDate = expiredDate 
+                    })
+                .SendAsync();
+
+            if (!result.Successful)
+            {
+                throw new Exception($"Failed to send email: {result.ErrorMessages.FirstOrDefault()}");
+            }
+        }
+    }
+    
+    public async Task SendEmailNotificationCandidateAsync(List<ApplicationUser> users, string content, string voteName, string candidateNames, DateTime startDate, DateTime expiredDate)
+    {
+        foreach (var user in users)
+        {
+            var result = await _fluentEmailFactory
+                .Create()
+                .To(user.Email ?? user.NewEmail, user.FullName)
+                .Subject("System Notification")
+                .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/system-notification.cshtml",
+                    new 
+                    { 
+                        Name = user.FullName, 
+                        Content = content, 
+                        VoteName = voteName, 
+                        CandidateNames = candidateNames, 
+                        StartDate = startDate, 
+                        ExpiredDate = expiredDate 
+                    })
+                .SendAsync();
+
+            if (!result.Successful)
+            {
+                throw new Exception($"Failed to send email: {result.ErrorMessages.FirstOrDefault()}");
+            }
         }
     }
 

@@ -47,6 +47,7 @@ public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersBy
             CellPhone = v.user.CellPhone,
             Address = v.user.Address,
             Birthday = v.user.Birthday,
+            ImageUrl = v.user.ImageUrl,
             Status = v.uv.Status
         }).ToList();
         

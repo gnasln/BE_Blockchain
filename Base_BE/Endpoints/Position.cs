@@ -53,9 +53,9 @@ namespace Base_BE.Endpoints
             });
         }
 
-        public async Task<ResultCustomPaginate<IEnumerable<PositionResponse>>> GetAllPosition([FromServices] ISender sender, int page, int pageSize)
+        public async Task<ResultCustomPaginate<IEnumerable<PositionResponse>>> GetAllPosition([FromServices] ISender sender,string? positionName, bool? status, int page, int pageSize)
         {
-            var result = await sender.Send(new GetAllPositionQuery() { Page = page, PageSize = pageSize }); 
+            var result = await sender.Send(new GetAllPositionQuery() { Page = page, PageSize = pageSize, PositionName = positionName, Status = status }); 
             return new ResultCustomPaginate<IEnumerable<PositionResponse>>
             {
                 Status = result.Status,

@@ -2,7 +2,6 @@
 using MediatR;
 using AutoMapper;
 using Base_BE.Application.Common.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using NetHelper.Common.Models;
 
 namespace Base_BE.Application.Vote.Commands

@@ -8,5 +8,6 @@ public class VoterDto
     public string? Address { get; set; }
     public string? CellPhone { get; set; }
     public DateTime? Birthday { get; set; }
+    public string? ImageUrl { get; set; }
     public bool? Status { get; set; }
 }

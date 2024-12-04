@@ -10,18 +10,11 @@ using Base_BE.Helper.Services;
 using Base_BE.Infrastructure.Data;
 using Base_BE.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using NetHelper.Common.Models;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Signer;
-using ServiceStack;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Threading;
 using IUser = Base_BE.Application.Common.Interfaces.IUser;
 
 namespace Base_BE.Endpoints;
@@ -48,6 +41,7 @@ public class Vote : EndpointGroupBase
             .MapPost(SubmitVote, "/submit-vote")
             .MapGet(GetHistoryVote, "/History-vote")
             .MapGet(GetAllVoteForCandidate, "/View-list-for-candidate")
+            .MapPost(SendMailForCandidate, "/send-mail-candidate")
             ;
 
     }
@@ -55,10 +49,11 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> CreateVote(
     [FromServices] ISender sender,
     [FromBody] CreateVoteCommand request,
-    [FromServices] EmailSender emailSender,
+    [FromServices] IEmailSender emailSender,
     [FromServices] UserManager<ApplicationUser> userManager,
     [FromServices] IBackgroundTaskQueue taskQueue)
     {
+        // await SendEmailForCandidate(request, emailSender, userManager, taskQueue);
         var result = await sender.Send(request);
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
@@ -70,38 +65,68 @@ public class Vote : EndpointGroupBase
             });
         }
 
-
+        List<ApplicationUser> voters = new List<ApplicationUser>();
         foreach (var voter in request.Voters)
         {
             var user1 = await userManager.FindByIdAsync(voter);
-            var email1 = user1.Email ?? user1.NewEmail;
-            var voterContent = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là cử tri.";
-
-            //Thêm nhiệm vụ gửi email cho cử tri vào hàng đợi
-            taskQueue.QueueBackgroundWorkItem(async ct =>
-            {
-                await emailSender.SendEmailNotificationAsync(email1!, user1.FullName!, voterContent, request.VoteName, null, request.StartDate, request.ExpiredDate);
-            });
+            voters.Add(user1);
         }
+        var voterContent = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là cử tri.";
 
-        foreach (var candidate in request.Candidates)
+        //Thêm nhiệm vụ gửi email cho cử tri vào hàng đợi
+        taskQueue.QueueBackgroundWorkItem(async ct =>
         {
-            var user2 = await userManager.FindByIdAsync(candidate);
-            var email2 = user2.Email ?? user2.NewEmail;
-            var candidateContent = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là ứng viên.";
+            await emailSender.SendEmailNotificationAsync(voters!, voterContent, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
+        });
 
-            //Thêm nhiệm vụ gửi email cho ứng viên vào hàng đợi
-            taskQueue.QueueBackgroundWorkItem(async ct =>
-            {
-                await emailSender.SendEmailNotificationAsync(email2!, user2.FullName!, candidateContent, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
-            });
-        }
-
+        
+        // List<ApplicationUser> candidates = new List<ApplicationUser>();
+        // foreach (var candidate in request.Candidates)
+        // {
+        //     var candidateUser = await userManager.FindByIdAsync(candidate);
+        //     candidates.Add(candidateUser);
+        // }
+        //
+        // var candidateContent = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là ứng viên.";
+        //
+        // //Thêm nhiệm vụ gửi email cho ứng viên vào hàng đợi
+        // taskQueue.QueueBackgroundWorkItem(async ct =>
+        // {
+        //     await emailSender.SendEmailNotificationCandidateAsync(candidates!, candidateContent, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
+        // });
         return Results.Ok(new
         {
             status = result.Status,
             message = result.Message,
             data = result.Data
+        });
+    }
+
+    public async Task<IResult> SendMailForCandidate(
+        [FromBody] CreateVoteCommand request,
+        [FromServices] IEmailSender emailSender,
+        [FromServices] UserManager<ApplicationUser> userManager,
+        [FromServices] IBackgroundTaskQueue taskQueue)
+    {
+        List<ApplicationUser> candidates = new List<ApplicationUser>();
+        foreach (var candidate in request.Candidates)
+        {
+            var candidateUser = await userManager.FindByIdAsync(candidate);
+            candidates.Add(candidateUser);
+        }
+        
+        var candidateContent = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là ứng viên.";
+        
+        //Thêm nhiệm vụ gửi email cho ứng viên vào hàng đợi
+        taskQueue.QueueBackgroundWorkItem(async ct =>
+        {
+            await emailSender.SendEmailNotificationCandidateAsync(candidates!, candidateContent, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
+        });
+        return Results.Ok(new
+        {
+            status = StatusCode.OK,
+            message = "Send mail success",
+            data = candidates
         });
     }
 
@@ -147,9 +172,9 @@ public class Vote : EndpointGroupBase
         });
     }
 
-    public async Task<IResult> GetAllVote([FromServices] ISender sender, [FromServices] ApplicationDbContext dbContext)
+    public async Task<IResult> GetAllVote([FromServices] ISender sender, [FromServices] ApplicationDbContext dbContext, string? voteName, string? status)
     {
-        var result = await sender.Send(new GetAllVoteQueries() { });
+        var result = await sender.Send(new GetAllVoteQueries() { VoteName = voteName, Status = status });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
@@ -244,7 +269,7 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetAllVoteForUser(
     [FromServices] IUser _user,
     [FromServices] ISender sender,
-    ApplicationDbContext dbContext)
+    ApplicationDbContext dbContext, string? voteName, string? status)
     {
         if (_user == null)
         {
@@ -255,7 +280,7 @@ public class Vote : EndpointGroupBase
             });
         }
 
-        var result = await sender.Send(new GetAllVoteForUserQueries { UserId = _user.Id! });
+        var result = await sender.Send(new GetAllVoteForUserQueries { UserId = _user.Id!, VoteName = voteName, Status = status });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
@@ -305,7 +330,8 @@ public class Vote : EndpointGroupBase
     public async Task<IResult> GetAllVoteForCandidate(
     [FromServices] IUser _user,
     [FromServices] ISender sender,
-    ApplicationDbContext dbContext)
+    ApplicationDbContext dbContext,
+    string? voteName, string? status)
     {
         if (_user == null)
         {
@@ -316,7 +342,7 @@ public class Vote : EndpointGroupBase
             });
         }
 
-        var result = await sender.Send(new GetAllVoteForCandidateQueries { UserId = _user.Id! });
+        var result = await sender.Send(new GetAllVoteForCandidateQueries { UserId = _user.Id!, VoteName = voteName, Status = status });
         if (result.Status == StatusCode.INTERNALSERVERERROR)
         {
             return Results.BadRequest(new
@@ -558,6 +584,7 @@ public class Vote : EndpointGroupBase
                 Address = item.Address,
                 CellPhone = item.CellPhone,
                 Birthday = item.Birthday,
+                ImageUrl = item.ImageUrl,
                 Status = item.Status,
             };
             listVoters.Add(voter);

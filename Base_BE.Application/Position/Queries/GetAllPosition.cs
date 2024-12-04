@@ -13,6 +13,8 @@ public class GetAllPositionQuery : IRequest<ResultCustomPaginate<IEnumerable<Pos
 {
     public int Page { get; set; }
     public int PageSize { get; set; }
+    public string? PositionName { get; set; }
+    public bool? Status { get; set; }
 
     public class Mapping : Profile
     {
@@ -38,15 +40,31 @@ public class GetAllPositionQueryHandle : IRequestHandler<GetAllPositionQuery, Re
     {
         var query = _context.Positions.AsQueryable();
 
+        // Tìm kiếm theo PositionName
+        if (!string.IsNullOrEmpty(request.PositionName))
+        {
+            query = query.Where(p => p.PositionName.Contains(request.PositionName));
+        }
+
+        // Tìm kiếm theo Status
+        if (request.Status.HasValue)
+        {
+            query = query.Where(p => p.Status == request.Status.Value);
+        }
+
+        // Lấy tổng số bản ghi
         var totalItems = await query.CountAsync(cancellationToken);
 
+        // Lấy danh sách bản ghi theo phân trang
         var entity = await query
             .Skip(request.PageSize * (request.Page - 1))
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
+        // Chuyển đổi entity sang DTO
         var response = _mapper.Map<IEnumerable<PositionResponse>>(entity);
 
+        // Trả về kết quả phân trang
         return new ResultCustomPaginate<IEnumerable<PositionResponse>>
         {
             Status = StatusCode.OK,
@@ -58,4 +76,5 @@ public class GetAllPositionQueryHandle : IRequestHandler<GetAllPositionQuery, Re
             PageSize = request.PageSize
         };
     }
+
 }

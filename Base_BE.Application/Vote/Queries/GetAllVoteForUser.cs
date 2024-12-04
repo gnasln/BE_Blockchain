@@ -11,6 +11,8 @@ namespace Base_BE.Application.Vote.Queries
     public class GetAllVoteForUserQueries : IRequest<ResultCustom<List<VotingReponse>>>
     {
         public string UserId { get; set; }
+        public string? VoteName { get; set; }
+        public string? Status { get; set; }
     }
 
     public class GetAllVoteForUserQueriesHandler : IRequestHandler<GetAllVoteForUserQueries, ResultCustom<List<VotingReponse>>>
@@ -28,15 +30,33 @@ namespace Base_BE.Application.Vote.Queries
         {
             try
             {
-                var entities = await (from vote in _context.Votes
-                        join userVote in _context.UserVotes on vote.Id equals userVote.VoteId into voteGroup
-                        from userVote in voteGroup.DefaultIfEmpty()
-                        where userVote.UserId == request.UserId && userVote.Role == "Voter"
-                                      select vote)
-                    .ToListAsync(cancellationToken);
+                // Xây dựng truy vấn với join và điều kiện lọc
+                var query = from vote in _context.Votes
+                    join userVote in _context.UserVotes on vote.Id equals userVote.VoteId into voteGroup
+                    from userVote in voteGroup.DefaultIfEmpty()
+                    where userVote.UserId == request.UserId 
+                          && userVote.Role == "Voter" // Kiểm tra quyền của user
+                    select vote;
 
+                // Tìm kiếm theo VoteName nếu có
+                if (!string.IsNullOrEmpty(request.VoteName))
+                {
+                    query = query.Where(v => v.VoteName.Contains(request.VoteName));
+                }
+
+                // Tìm kiếm theo Status nếu có
+                if (!string.IsNullOrEmpty(request.Status))
+                {
+                    query = query.Where(v => v.Status.Contains(request.Status));
+                }
+
+                // Lấy kết quả
+                var entities = await query.ToListAsync(cancellationToken);
+
+                // Chuyển đổi entities thành DTO
                 var result = _mapper.Map<List<VotingReponse>>(entities);
 
+                // Trả về kết quả
                 return new ResultCustom<List<VotingReponse>>
                 {
                     Status = StatusCode.OK,
@@ -46,6 +66,7 @@ namespace Base_BE.Application.Vote.Queries
             }
             catch (Exception ex)
             {
+                // Xử lý lỗi
                 return new ResultCustom<List<VotingReponse>>
                 {
                     Status = StatusCode.INTERNALSERVERERROR,

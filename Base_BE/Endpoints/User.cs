@@ -2,13 +2,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ServiceStack;
-using System.Security.Cryptography;
 using Base_BE.Application.Common.Interfaces;
 using Base_BE.Domain.Constants;
 using Base_BE.Domain.Entities;
 using Base_BE.Dtos;
+using Base_BE.Helper.Services;
 using Base_BE.Services;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using NetHelper.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Base_BE.Helper.key;
@@ -36,7 +35,7 @@ namespace Base_BE.Endpoints
                 .MapGet(CheckPasswordFirstTime, "/check-password-first-time")
                 .MapPost(CheckPasswork, "/check-password")
                 .MapGet(GetUserById, "/get-user/{id}")
-            ;
+                ;
 
             app.MapGroup(this)
                 .RequireAuthorization("admin")
@@ -48,7 +47,8 @@ namespace Base_BE.Endpoints
         }
 
         public async Task<IResult> RegisterUser([FromBody] RegisterForm newUser,
-            UserManager<ApplicationUser> _userManager, [FromServices] EmailSender _emailSender, [FromServices] IBackgroundTaskQueue taskQueue)
+            UserManager<ApplicationUser> _userManager, [FromServices] IEmailSender _emailSender,
+            [FromServices] IBackgroundTaskQueue taskQueue)
         {
             // Kiểm tra Username
             if (string.IsNullOrEmpty(newUser.UserName))
@@ -72,7 +72,6 @@ namespace Base_BE.Endpoints
             // Tạo cặp khóa 
             var privateKey = RandomPrivateKeyGenerator.GetRandomPrivateKey();
             var keyPair = RandomPrivateKeyGenerator.GenerateKeyPair(privateKey);
-
 
 
             // Tạo đối tượng ApplicationUser
@@ -123,9 +122,10 @@ namespace Base_BE.Endpoints
                 return Results.BadRequest($"500|{string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
         }
-        
+
         public async Task<IResult> ForgotPassword([FromBody] ForgotPassword forgotPassword,
-            UserManager<ApplicationUser> _userManager, [FromServices] IEmailSender _emailSender, [FromServices] IBackgroundTaskQueue taskQueue)
+            UserManager<ApplicationUser> _userManager, [FromServices] IEmailSender _emailSender,
+            [FromServices] IBackgroundTaskQueue taskQueue)
         {
             try
             {
@@ -268,6 +268,18 @@ C****: Update User
                 if (!updateUser.CellPhone.IsNullOrEmpty()) currentUser.CellPhone = updateUser.CellPhone;
                 if (!updateUser.Address.IsNullOrEmpty()) currentUser.Address = updateUser.Address;
                 if (!updateUser.FullName.IsNullOrEmpty()) currentUser.FullName = updateUser.FullName;
+                currentUser.Gender = updateUser.Gender;
+                if (!(updateUser.Birthday == null)) currentUser.Birthday = updateUser.Birthday;
+                if (!updateUser.ImageUrl.IsNullOrEmpty()) currentUser.ImageUrl = updateUser.ImageUrl;
+                if (!updateUser.IdentityCardImage.IsNullOrEmpty())
+                    currentUser.IdentityCardImage = updateUser.IdentityCardImage;
+                if (!updateUser.IdentityCardNumber.IsNullOrEmpty())
+                    currentUser.IdentityCardNumber = updateUser.IdentityCardNumber;
+                if (!(updateUser.IdentityCardDate == null)) currentUser.IdentityCardDate = updateUser.IdentityCardDate;
+                if (!updateUser.IdentityCardPlace.IsNullOrEmpty())
+                    currentUser.IdentityCardPlace = updateUser.IdentityCardPlace;
+
+
                 currentUser.UpdateDate = DateTime.Now;
 
                 var result = await _userManager.UpdateAsync(currentUser);
@@ -322,7 +334,7 @@ C****: Update User
         }
 
         public async Task<IResult> SendOTP([FromServices] OTPService _otpService,
-            [FromServices] IEmailSender _emailSender, [FromBody] SendOTPRequest request, [FromServices]IUser _user)
+            [FromServices] IEmailSender _emailSender, [FromBody] SendOTPRequest request, [FromServices] IUser _user)
         {
             try
             {
@@ -330,13 +342,14 @@ C****: Update User
                 {
                     return Results.BadRequest("400|Email is required");
                 }
+
                 var otp = _otpService.GenerateOTP();
 
                 _otpService.SaveOTP(request.Email, otp);
 
                 await _emailSender.SendEmailAsync(request.Email, _user.UserName!
                     , $"Mã xác minh của bạn là: {otp}");
-            
+
                 return Results.Ok("200|OTP sent successfully");
             }
             catch (Exception e)
@@ -355,8 +368,8 @@ C****: Update User
             }
 
             var isValid = false;
-            
-            if(!currentUser.Email.IsNullOrEmpty() && currentUser.NewEmail.IsNullOrEmpty())
+
+            if (!currentUser.Email.IsNullOrEmpty() && currentUser.NewEmail.IsNullOrEmpty())
             {
                 isValid = currentUser.Email != null && _otpService.VerifyOTP(currentUser.Email, request.OTP);
             }
@@ -364,7 +377,7 @@ C****: Update User
             {
                 isValid = currentUser.NewEmail != null && _otpService.VerifyOTP(currentUser.NewEmail, request.OTP);
             }
-            
+
 
             if (isValid)
             {
@@ -377,29 +390,63 @@ C****: Update User
         }
 
         public async Task<ResultCustomPaginate<IEnumerable<UserDto>>> GetAllUsers(
-            [FromServices] UserManager<ApplicationUser> _userManager, int page, int pageSize)
+            [FromServices] UserManager<ApplicationUser> _userManager,
+            string? fullName,
+            string? email,
+            string? cellPhone,
+            string? status,
+            string? role,
+            int page,
+            int pageSize)
         {
-            var usersQuery = _userManager.Users;
+            var usersQuery = _userManager.Users.AsQueryable();
 
+            // Tìm kiếm theo Fullname
+            if (!string.IsNullOrEmpty(fullName))
+            {
+                usersQuery = usersQuery.Where(u => u.FullName.Contains(fullName));
+            }
+
+            // Tìm kiếm theo Email
+            if (!string.IsNullOrEmpty(email))
+            {
+                usersQuery = usersQuery.Where(u => u.Email.Contains(email));
+            }
+
+            // Tìm kiếm theo CellPhone
+            if (!string.IsNullOrEmpty(cellPhone))
+            {
+                usersQuery = usersQuery.Where(u => u.CellPhone.Contains(cellPhone));
+            }
+
+            // Tìm kiếm theo Status
+            if (!string.IsNullOrEmpty(status))
+            {
+                usersQuery = usersQuery.Where(u => u.Status.Contains(status));
+            }
+
+            // Lấy danh sách người dùng và lấy roles ngoài truy vấn để tránh vấn đề với GetRolesAsync
             var usersList = await usersQuery.ToListAsync();
 
             var usersDtoList = new List<UserDto>();
 
             foreach (var u in usersList)
             {
-                // Tạo đối tượng UserDto
+                // Lấy roles cho người dùng
+                var roles = await _userManager.GetRolesAsync(u);
+
                 var userDto = new UserDto
                 {
                     Id = u.Id,
                     Fullname = u.FullName,
                     UserName = u.UserName,
                     Email = u.Email,
-                    CellPhone = u.PhoneNumber,
+                    CellPhone = u.CellPhone,
                     status = u.Status,
                     Birthday = u.Birthday,
                     Address = u.Address,
                     CreatedAt = u.CreateDate,
-                    Role = (await _userManager.GetRolesAsync(u)).FirstOrDefault(),
+                    Role = roles.FirstOrDefault(),
                     ImageUrl = u.ImageUrl,
                     IdentityCardImage = u.IdentityCardImage
                 };
@@ -407,7 +454,13 @@ C****: Update User
                 usersDtoList.Add(userDto);
             }
 
-            // Sort by ActivationDate
+            // Lọc theo Role
+            if (!string.IsNullOrEmpty(role))
+            {
+                usersDtoList = usersDtoList.Where(u => u.Role == role).ToList();
+            }
+
+            // Sắp xếp theo CreatedAt
             var sortedUsersDtoList = usersDtoList.OrderByDescending(u => u.CreatedAt).ToList();
 
             // Áp dụng phân trang
@@ -424,6 +477,7 @@ C****: Update User
 
             return result;
         }
+
 
         public async Task<IResult> GetCurrentUser([FromServices] UserManager<ApplicationUser> _userManager, IUser _user)
         {
@@ -452,7 +506,6 @@ C****: Update User
                 Role = (await _userManager.GetRolesAsync(currentUser)).FirstOrDefault(),
                 ImageUrl = currentUser.ImageUrl,
                 IdentityCardImage = currentUser.IdentityCardImage
-                
             };
 
             return Results.Ok(userDto);
@@ -475,21 +528,6 @@ C****: Update User
 
             return Results.BadRequest("400|Password was not changed first time.");
         }
-
-        // public async Task<IResult> DisableAccount([FromRoute] string id,
-        //     [FromServices] UserManager<ApplicationUser> _userManager)
-        // {
-        //     var user = await _userManager.FindByIdAsync(id);
-        //
-        //     if (user == null)
-        //     {
-        //         return Results.BadRequest("400|User not found");
-        //     }
-        //
-        //     user.Status = "Disabled";
-        //
-        //     
-        // }
 
         public async Task<IResult> GetUserById([FromServices] UserManager<ApplicationUser> _userManager,
             [FromRoute] string id)
@@ -542,6 +580,7 @@ C****: Update User
                     return Results.Ok("200|Password is correct");
                 }
             }
+
             return Results.BadRequest("400|Password is incorrect");
         }
 
@@ -580,8 +619,8 @@ C****: Update User
 
                 usersDtoList.Add(userDto);
             }
+
             return Results.Ok(usersDtoList);
         }
-        
     }
 }

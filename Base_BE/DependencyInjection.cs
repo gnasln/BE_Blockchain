@@ -13,6 +13,7 @@ using Base_BE.Helper.Services;
 using Base_BE.Domain.Entities;
 using Base_BE.Helper;
 using Microsoft.AspNetCore.Identity;
+using IEmailSender = Base_BE.Helper.Services.IEmailSender;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -27,9 +28,7 @@ public static class DependencyInjection
         services.AddControllers();
         services.AddMemoryCache(); // Thêm dòng này để sử dụng MemoryCache
         services.AddSingleton<OTPService>();
-        services.AddTransient<IEmailSender, EmailSender>(); // Giả định bạn có một implementation của IEmailSender
-        // Register the EmailSender service
-        services.AddTransient<EmailSender>();
+        services.AddScoped<IEmailSender, EmailSender>(); // Giả định bạn có một implementation của IEmailSender
         // Register the BackgroundTaskQueue service
         services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
         services.AddHostedService<QueuedHostedService>();
