@@ -41,6 +41,7 @@ public class GetAllVotersByVoteIdQueriesHandler : IRequestHandler<GetAllVotersBy
 
         var voterDtos = voters.Select(v => new VoterDto
         {
+            Id = v.user.Id,
             Fullname = v.user.FullName,
             Email = v.user.Email,
             NewEmail = v.user.NewEmail,

@@ -578,6 +578,7 @@ public class Vote : EndpointGroupBase
         {
             var voter = new Base_BE.Dtos.VoterDto()
             {
+                Id = item.Id,
                 Fullname = item.Fullname,
                 Email = item.Email,
                 NewEmail = item.NewEmail,
