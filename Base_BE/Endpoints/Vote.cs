@@ -74,10 +74,10 @@ public class Vote : EndpointGroupBase
         var voterContent = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là cử tri.";
 
         //Thêm nhiệm vụ gửi email cho cử tri vào hàng đợi
-        taskQueue.QueueBackgroundWorkItem(async ct =>
-        {
+        // taskQueue.QueueBackgroundWorkItem(async ct =>
+        // {
             await emailSender.SendEmailNotificationAsync(voters!, voterContent, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
-        });
+        // });
 
         
         // List<ApplicationUser> candidates = new List<ApplicationUser>();
@@ -112,16 +112,16 @@ public class Vote : EndpointGroupBase
         foreach (var candidate in request.Candidates)
         {
             var candidateUser = await userManager.FindByIdAsync(candidate);
-            candidates.Add(candidateUser);
+            if (candidateUser != null) candidates.Add(candidateUser);
         }
         
         var candidateContent = $"Bạn đã được thêm vào cuộc bầu cử: \"{request.VoteName}\" với vai trò là ứng viên.";
         
         //Thêm nhiệm vụ gửi email cho ứng viên vào hàng đợi
-        taskQueue.QueueBackgroundWorkItem(async ct =>
-        {
+        // taskQueue.QueueBackgroundWorkItem(async ct =>
+        // {
             await emailSender.SendEmailNotificationCandidateAsync(candidates!, candidateContent, request.VoteName, string.Join(", ", request.CandidateNames), request.StartDate, request.ExpiredDate);
-        });
+        // });
         return Results.Ok(new
         {
             status = StatusCode.OK,
