@@ -87,7 +87,7 @@ if (app.Environment.IsDevelopment() || app.Configuration["EnableDumpEnv"] == "1"
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    await app.InitializeDatabaseAsync();
+    // await app.InitializeDatabaseAsync();
 }
 
 

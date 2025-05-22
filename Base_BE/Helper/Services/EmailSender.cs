@@ -12,6 +12,7 @@ public class EmailSender : IEmailSender
     private readonly string _fromAddress;
     private readonly IFluentEmail _fluentEmail;
     private readonly IFluentEmailFactory _fluentEmailFactory;
+    private readonly IConfiguration _configuration;
 
     public EmailSender(IConfiguration configuration, IFluentEmail fluentEmail, IFluentEmailFactory fluentEmailFactory)
     {
@@ -24,11 +25,16 @@ public class EmailSender : IEmailSender
         _fromAddress = configuration["EmailSettings:FromAddress"];
         _fluentEmail = fluentEmail;
         _fluentEmailFactory = fluentEmailFactory;
+        _configuration = configuration;
     }
 
     public async Task SendEmailAsync(string email, string name, string otp)
     {
+        var companyName = _configuration["EmailSettings:CompanyName"] ?? "Your Company";
+        var fromAddress = _fromAddress; // already set from configuration
+        
         var result = await _fluentEmail
+            .SetFrom(fromAddress, companyName)
             .To(email, name)
             .Subject("Xác Minh Email")
             .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/Send_OTP.cshtml",
@@ -43,7 +49,12 @@ public class EmailSender : IEmailSender
 
     public async Task SendEmailRegisterAsync(string email, string fullname, string userName, string password, string keyPrivate)
     {
+        
+        var companyName = _configuration["EmailSettings:CompanyName"] ?? "Your Company";
+        var fromAddress = _fromAddress; // already set from configuration
+        
         var result = await _fluentEmail
+            .SetFrom(fromAddress, companyName)
             .To(email, fullname)
             .Subject("Thông báo tạo tài khoản")
             .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/Send_Password.cshtml",
@@ -58,10 +69,14 @@ public class EmailSender : IEmailSender
     
     public async Task SendEmailNotificationAsync(List<ApplicationUser> users, string content, string voteName, string candidateNames, DateTime startDate, DateTime expiredDate)
     {
+        var companyName = _configuration["EmailSettings:CompanyName"] ?? "Your Company";
+        var fromAddress = _fromAddress;
+        
         foreach (var user in users)
         {
             var result = await _fluentEmailFactory
                 .Create()
+                .SetFrom(fromAddress, companyName)
                 .To(user.Email ?? user.NewEmail, user.FullName)
                 .Subject("System Notification")
                 .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/system-notification.cshtml",
@@ -85,10 +100,14 @@ public class EmailSender : IEmailSender
     
     public async Task SendEmailNotificationCandidateAsync(List<ApplicationUser> users, string content, string voteName, string candidateNames, DateTime startDate, DateTime expiredDate)
     {
+        var companyName = _configuration["EmailSettings:CompanyName"] ?? "Your Company";
+        var fromAddress = _fromAddress; // already set from configuration
+        
         foreach (var user in users)
         {
             var result = await _fluentEmailFactory
                 .Create()
+                .SetFrom(fromAddress, companyName)
                 .To(user.Email ?? user.NewEmail, user.FullName)
                 .Subject("System Notification")
                 .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Resources/Templates/system-notification.cshtml",

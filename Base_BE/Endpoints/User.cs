@@ -106,14 +106,9 @@ namespace Base_BE.Endpoints
                 {
                     return Results.BadRequest("500|Failed to assign role to user");
                 }
-
-                // Gửi email chứa thông tin tài khoản và khóa riêng (private key)
-                taskQueue.QueueBackgroundWorkItem(async ct =>
-                {
-                    await _emailSender.SendEmailRegisterAsync(newUser.Email, newUser.FullName, newUser.UserName,
+                await _emailSender.SendEmailRegisterAsync(newUser.Email, newUser.FullName, newUser.UserName,
                         passwordSeed, keyPair["privateKey"]);
-                });
-
+                
                 return Results.Ok("200|User created successfully");
             }
             else
